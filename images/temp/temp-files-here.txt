@@ -1,0 +1,1 @@
+This is the folder for temp files downloaded from FTP server before they are processed and stored in the final folders.
