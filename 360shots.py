@@ -3,6 +3,7 @@ import os
 
 from libs import xcrapper
 
+
 # Configurable constants
 #=======================================================================================================================
 
@@ -11,12 +12,13 @@ s_USER = 'xbox'
 s_PASS = 'xbox'
 s_ROOT = '/Hdd1/Freestyle Dash/Plugins/UserData/'
 
-## Constant constants (really constant constants this time, I swear)
-##=======================================================================================================================
+
+# Constant constants (really constant constants this time, I swear)
+#=======================================================================================================================
 s_TEMP_FOLDER = os.path.join('images', 'temp')
 s_FINAL_IMAGES_ROOT = os.path.join('images')
 
-#
+
 # Main code - Image gathering from Xbox 360
 #=======================================================================================================================
 
@@ -50,7 +52,7 @@ print '======================================================='
 #    o_ftp.delete_dir(o_screenshot_dir)
 #    o_ftp.delete_dir(o_game_dir)
 
-#
+
 # Main code - Image processing
 #=======================================================================================================================
 for s_element in os.listdir(s_TEMP_FOLDER):
@@ -66,7 +68,7 @@ for s_element in os.listdir(s_TEMP_FOLDER):
             s_file_name = s_element
             s_file_ext = ''
 
-        # Freestyle Dash takes screenshots in bmp format and it creates a .meta file with information
+        # Freestyle Dash takes screenshots in bmp format and it creates a .meta file with extra information.
         if s_file_ext in ('bmp', 'meta'):
             s_game_id = s_file_name[0:8]
             s_raw_date = s_file_name[8:16]
