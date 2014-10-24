@@ -1,12 +1,11 @@
 import datetime
 import os
-import sys                      # To handle basic OS functions
 
-import xcrapper                 # Library to scrap game titles from xbox.com
-import ftpextra                 # Personal library to help in ftp handling
+from libs import xcrapper
 
 # Configurable constants
 #=======================================================================================================================
+
 s_HOST = '192.168.0.106'
 s_USER = 'xbox'
 s_PASS = 'xbox'
