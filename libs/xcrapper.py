@@ -27,6 +27,6 @@ def id_to_title(s_id):
 
         # To avoid the unknown game error
         if s_title[0:6] == 'Ooops!':
-            s_title = 'Unknown game'
+            s_title = '--- Unknown game ---'
 
     return s_title
