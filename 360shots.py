@@ -69,7 +69,14 @@ def clean_temp():
 
 # Image gathering from Xbox 360
 #=======================================================================================================================
-def image_gathering():
+def image_gathering(s_mode=''):
+    """
+    Function to gather all the screenshots from Xbox 360.
+
+    :param s_mode: 'keep' to maintain the downloaded data in the console. Otherwise it will be removed.
+
+    :return:
+    """
 
     o_ftp = ftpextra.Ftp(s_HOST, s_USER, s_PASS)
 
@@ -96,12 +103,14 @@ def image_gathering():
             o_game_file.download('flat', s_TEMP_FOLDER)
             i_file_counter += 1
 
-            o_game_file.delete()
+            if s_mode != 'keep':
+                o_game_file.delete()
 
-        o_screenshot_dir.delete()
-        o_game_dir.delete()
+        if s_mode != 'keep':
+            o_screenshot_dir.delete()
+            o_game_dir.delete()
 
-    print '%i files downloaded'
+    print '%i files downloaded' % i_file_counter
 
 
 # Main code - Image renaming + png conversion
@@ -135,13 +144,15 @@ def image_rename():
             s_baked_time = o_time.strftime('%H:%M:%S')
             s_title = o_game_database.get_title_by_id(s_game_id)
 
-            s_new_filename = os.path.join(s_TEMP_FOLDER, '%s %s - %s' % (s_baked_date, s_baked_time, s_title))
+            s_new_filename = os.path.join(s_TEMP_FOLDER, '%s %s %s - %s' % (s_baked_date, s_baked_time, s_game_id, s_title))
+            s_new_filename = s_new_filename.encode('ascii', 'ignore')
             os.rename(s_old_file_path, '%s.%s' % (s_new_filename, s_file_ext))
 
             s_src_image = '%s.%s' % (s_new_filename, s_file_ext)
             s_dst_image = '%s.png' % s_new_filename
 
-            s_commandline = 'convert "%s" -format png "%s"' % (s_src_image, s_dst_image)
+            # todo: try to hide imagemagick error messages also for Windows and Mac computers
+            s_commandline = 'convert "%s" -format png "%s" > /dev/null 2>&1' % (s_src_image, s_dst_image)
             os.system(s_commandline)
 
             os.remove(s_src_image)
@@ -242,7 +253,7 @@ def image_mosaic():
 print '\nXbox 360 Freestyle Dash Screenshot Collector (X360 FSC)'
 print '======================================================='
 
-image_gathering()
+image_gathering('keep')
 image_rename()
 image_organize()
 image_mosaic()

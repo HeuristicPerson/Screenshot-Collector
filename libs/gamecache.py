@@ -30,7 +30,7 @@ class Database:
             s_id = s_line.partition('\t')[0]
             s_title = s_line.partition('\t')[2]
 
-            self._ds_entries[s_id] = s_title
+            self._ds_entries[s_id] = s_title.decode('utf8')
 
         o_file.close()
 
@@ -52,7 +52,7 @@ class Database:
         o_file = open(s_CACHE_FILE, 'w')
 
         for d_data_element in ld_data_elements:
-            o_file.write('%s\t%s\n' % (d_data_element['id'], d_data_element['title']))
+            o_file.write('%s\t%s\n' % (d_data_element['id'], d_data_element['title'].encode('utf8', 'ignore')))
 
         o_file.close()
 
