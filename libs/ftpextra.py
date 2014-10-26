@@ -35,10 +35,10 @@ class Ftp:
 
     def list_elements(self, s_root=''):
         """
-        Method to return a list containing all the FileEntry objects corresponding to the elements in the CWD of the
+        Method to return a list containing all the FtpFileEntry objects corresponding to the elements in the CWD of the
         ftp.
 
-        :return: A list of FileEntry objects.
+        :return: A list of FtpFileEntry objects.
         """
 
         s_current_dir = self.o_ftp.pwd()
@@ -50,7 +50,7 @@ class Ftp:
 
         for s_line in self.o_ftp.nlst():
 
-            o_file_entry = FileEntry(self, s_root, s_line, s_method='from_nlst_line')
+            o_file_entry = FtpFileEntry(self, s_root, s_line, s_method='from_nlst_line')
 
             # Only actual files, 'f', and directories, 'd' are kept. Fake dirs like '..' are avoid.
             if o_file_entry.s_type in ('f', 'd'):
@@ -64,7 +64,7 @@ class Ftp:
         """
         Similar to list_elements method but only directory elements are returned.
 
-        :return: A list of FileEntry objects.
+        :return: A list of FtpFileEntry objects.
         """
 
         lo_elements = self.list_elements(s_root)
@@ -81,7 +81,7 @@ class Ftp:
         """
         Similar to list_elements method but only file elements are returned.
 
-        :return: A list of FileEntry objects.
+        :return: A list of FtpFileEntry objects.
         """
 
         lo_elements = self.list_elements(s_root)
@@ -157,11 +157,7 @@ class Ftp:
         if o_file_entry.s_type == 'd':
             # BIG WARNING HERE: After deleting a directory you are returned to the parent folder of the deleted one!!!
             self.o_ftp.cwd(o_file_entry.s_root)
-
-            print 'Trying to delete %s' % o_file_entry.s_full_name
             self.o_ftp.rmd(o_file_entry.s_full_name)
-
-            self.o_ftp.dir()
 
         elif o_file_entry.s_type == 'f':
             print 'ERROR: You are trying to delete a file as a directory'
@@ -175,7 +171,7 @@ class Ftp:
         self.o_ftp.retrbinary(cmd=s_cmd, callback=s_callback, blocksize=i_blocksize, rest=i_rest)
 
 
-class FileEntry:
+class FtpFileEntry:
 
     def __init__(self, o_ftp, s_root, s_input, s_method='from_nlst_line'):
 
@@ -193,8 +189,8 @@ class FileEntry:
         self.s_group = ''                   # File owner group
         self.s_user = ''                    # File owner user
 
-        self.s_root = ''                    # Full root path of the FileEntry
-        self.s_full_path = ''               # Full path of the FileEntry
+        self.s_root = ''                    # Full root path of the FtpFileEntry
+        self.s_full_path = ''               # Full path of the FtpFileEntry
 
         # Variable population (1/2) - Basic population
         if isinstance(o_ftp, Ftp):
@@ -204,7 +200,7 @@ class FileEntry:
             sys.exit()
 
         # Variable population (1/2) - Basic population
-        # s_root, s_input sanitization
+        # s_root, s_input sanitation
         s_root = s_root.rstrip('/')
         s_input = s_input.rstrip('/')
 
@@ -287,7 +283,7 @@ class FileEntry:
 
     def copy_from(self, o_source):
 
-        # TODO: Add code to detect in o_source object is actually a FileEntry object.
+        # TODO: Add code to detect in o_source object is actually a FtpFileEntry object.
         if o_source is not None:
             self.o_ftp = o_source.o_ftp
             self.i_size = o_source.i_size
@@ -302,6 +298,12 @@ class FileEntry:
             self.s_user = o_source.s_user
             self.s_root = o_source.s_root
             self.s_full_path = o_source.s_full_path
+
+    def delete(self):
+        if self.s_type == 'f':
+            self.o_ftp.delete_file(self)
+        elif self.s_type == 'd':
+            self.o_ftp.delete_dir(self)
 
     def download(self, s_mode='flat', s_dest=''):
         """
@@ -336,6 +338,13 @@ class FileEntry:
 
 
 def human_size(i_value):
+    """
+    Helper function to generate 'human readable' file sizes from raw number of bytes size.
+
+    :param i_value: Number of bytes. i.e. 1273
+
+    :return: A string indicating the file size using the appropiate units. i.e. '1.2 KB'
+    """
 
     s_output = ''
 

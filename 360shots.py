@@ -56,6 +56,17 @@ def get_files_in(s_folder):
     return ls_files
 
 
+def clean_temp():
+    """
+    Helper function to clean the temp folder.
+
+    :return: Nothing
+    """
+    for s_file in get_files_in(s_TEMP_FOLDER):
+        s_full_path = os.path.join(s_TEMP_FOLDER, s_file)
+        os.remove(s_full_path)
+
+
 # Image gathering from Xbox 360
 #=======================================================================================================================
 def image_gathering():
@@ -76,7 +87,7 @@ def image_gathering():
         print '--------------'
 
         s_game_screenshot_folder = '%s/Screenshots' % o_game_dir.s_full_path
-        o_screenshot_dir = ftpextra.FileEntry(o_ftp, s_game_screenshot_folder, '', s_method='from_path')
+        o_screenshot_dir = ftpextra.FtpFileEntry(o_ftp, s_game_screenshot_folder, '', s_method='from_path')
 
         lo_game_files = o_ftp.list_files(s_game_screenshot_folder)
 
@@ -85,10 +96,10 @@ def image_gathering():
             o_game_file.download('flat', s_TEMP_FOLDER)
             i_file_counter += 1
 
-            #o_ftp.delete_file(o_game_file)
-#
-#           o_ftp.delete_dir(o_screenshot_dir)
-#           o_ftp.delete_dir(o_game_dir)
+            o_game_file.delete()
+
+        o_screenshot_dir.delete()
+        o_game_dir.delete()
 
     print '%i files downloaded'
 
@@ -134,7 +145,6 @@ def image_rename():
             os.system(s_commandline)
 
             os.remove(s_src_image)
-
 
 
 # Main code - Image organization
@@ -225,12 +235,14 @@ def image_mosaic():
     else:
         print 'Mosaic: Mosaic found. NOT generating a new one. '
 
+    clean_temp()
+
 # Main program
 #=======================================================================================================================
 print '\nXbox 360 Freestyle Dash Screenshot Collector (X360 FSC)'
 print '======================================================='
 
-#image_gathering()
-#image_rename()
-#image_organize()
+image_gathering()
+image_rename()
+image_organize()
 image_mosaic()
