@@ -2,9 +2,11 @@
 454109DB	FIFA 15
 4D5309C9	Forza Horizon
 00000000	Freestyle Dash
-584113C7	Strider
 454108E6	Skate 3
+584113C7	Strider
 58410A5A	Super Meat Boy
 434307FC	Super Street Fighter IV Arcade Edition
 58411401	Trials Fusion™
+5841095A	Trials HD
 58411428	Valiant Hearts
+584113D1	WRC Powerslide

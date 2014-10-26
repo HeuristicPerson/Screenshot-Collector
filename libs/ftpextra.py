@@ -11,7 +11,7 @@ class Ftp:
 
         try:
             self.o_ftp = ftplib.FTP(host=s_host, user=s_user, passwd=s_pass, timeout=i_timeout)
-            print 'FTP> %s connected...' % s_host
+            #print 'FTP> %s connected...' % s_host
         except ftplib.all_errors:
             print 'ERROR: FTP server not found.'
             sys.exit()
@@ -332,9 +332,11 @@ class FtpFileEntry:
 
             o_dest_file.close()
 
-            print 'Downloaded: %s %s' % (s_dest_file, human_size(os.path.getsize(s_dest_file)))
+            #print 'Downloaded: %s %s' % (s_dest_file, human_size(os.path.getsize(s_dest_file)))
 
             self.o_ftp.cwd(s_original_path)
+
+            return human_size(os.path.getsize(s_dest_file))
 
 
 def human_size(i_value):
@@ -364,7 +366,3 @@ def human_size(i_value):
         s_output = '%3.1f %s' % (i_value, 'TB')
 
     return s_output
-
-
-
-

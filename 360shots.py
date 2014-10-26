@@ -16,7 +16,8 @@ s_ROOT = '/Hdd1/Freestyle Dash/Plugins/UserData/'
 s_GROUP = 'd'  # Valid values are 'y' yearly, 'm' monthly, 'w' weekly, 'd' daily.
 s_TILE_SIZE = '480x480'
 s_TILE_FONT = 'media/collegia.ttf'
-
+s_TILE_FONT_SIZE = 64
+s_STORE_EXT = 'png'
 
 # Constant constants (really constant constants this time, I swear)
 #=======================================================================================================================
@@ -79,19 +80,24 @@ def image_gathering(s_mode=''):
     """
 
     o_ftp = ftpextra.Ftp(s_HOST, s_USER, s_PASS)
+    print 'FTP %s connected...' % s_HOST
+    print
 
     i_file_counter = 0
 
     # Getting the list of game folders in s_ROOT
     lo_game_dirs = o_ftp.list_dirs(s_ROOT)
 
-    print 'Found screenshots for %i games' % len(lo_game_dirs)
+    print 'Downloading files from Xbox 360'
+    print '-------------------------------'
+    print 'Destination: %s' % s_TEMP_FOLDER
+    print 'Games found: %i' % len(lo_game_dirs)
+    print
 
     # For each game we download all the files included, which are '.bmp' and '.meta' files.
     for o_game_dir in lo_game_dirs:
 
-        print '\nGame: %s' % o_game_dir.s_name
-        print '--------------'
+        print '       Game: %s - %s' % (o_game_dir.s_name, o_game_database.get_title_by_id(o_game_dir.s_name))
 
         s_game_screenshot_folder = '%s/Screenshots' % o_game_dir.s_full_path
         o_screenshot_dir = ftpextra.FtpFileEntry(o_ftp, s_game_screenshot_folder, '', s_method='from_path')
@@ -100,11 +106,15 @@ def image_gathering(s_mode=''):
 
         for o_game_file in lo_game_files:
 
-            o_game_file.download('flat', s_TEMP_FOLDER)
+            s_size = o_game_file.download('flat', s_TEMP_FOLDER)
+            print '       File: %s %s' % (o_game_file.s_full_name, s_size)
+
             i_file_counter += 1
 
             if s_mode != 'keep':
                 o_game_file.delete()
+
+	print
 
         if s_mode != 'keep':
             o_screenshot_dir.delete()
@@ -116,8 +126,6 @@ def image_gathering(s_mode=''):
 # Main code - Image renaming + png conversion
 #=======================================================================================================================
 def image_rename():
-    o_game_database = gamecache.Database()
-
     print 'Games in the cached database: %i' % o_game_database.get_items()
 
     for s_file in get_files_in(s_TEMP_FOLDER):
@@ -146,10 +154,11 @@ def image_rename():
 
             s_new_filename = os.path.join(s_TEMP_FOLDER, '%s %s %s - %s' % (s_baked_date, s_baked_time, s_game_id, s_title))
             s_new_filename = s_new_filename.encode('ascii', 'ignore')
+
             os.rename(s_old_file_path, '%s.%s' % (s_new_filename, s_file_ext))
 
             s_src_image = '%s.%s' % (s_new_filename, s_file_ext)
-            s_dst_image = '%s.png' % s_new_filename
+            s_dst_image = '%s.%s' % (s_new_filename, s_STORE_EXT)
 
             # todo: try to hide imagemagick error messages also for Windows and Mac computers
             s_commandline = 'convert "%s" -format png "%s" > /dev/null 2>&1' % (s_src_image, s_dst_image)
@@ -205,9 +214,7 @@ def image_mosaic():
         # Copying all the previous-period images to temp folder
         b_files_to_process = False
 
-        ls_archived_images = get_files_in(s_HISTORIC_FOLDER)
-
-        for s_archived_image in ls_archived_images:
+        for s_archived_image in get_files_in(s_HISTORIC_FOLDER):
             s_src_file = os.path.join(s_HISTORIC_FOLDER, s_archived_image)
             s_dst_file = os.path.join(s_TEMP_FOLDER, s_archived_image)
 
@@ -229,12 +236,12 @@ def image_mosaic():
                 s_title = s_file_name.split('-')[3].strip()
 
                 s_commandline = 'convert "%s" -background Black ' \
-                                '-fill White -font "%s" -pointsize 36 label:\'%s\' -gravity Center -append ' \
-                                '-resize %s "%s"' % (s_img_full_path, s_TILE_FONT, s_title, s_TILE_SIZE,
+                                '-fill White -font "%s" -pointsize %s label:\'%s\' -gravity Center -append ' \
+                                '-resize %s "%s"' % (s_img_full_path, s_TILE_FONT, s_TILE_FONT_SIZE, s_title, s_TILE_SIZE,
                                                      s_img_full_path)
                 os.system(s_commandline)
 
-            s_src_images = os.path.join(s_TEMP_FOLDER, '*.png')
+            s_src_images = os.path.join(s_TEMP_FOLDER, '*.%s' % s_STORE_EXT)
             s_mosaic_file = os.path.join(s_MOSAIC_FOLDER, s_prev_mosaic_file)
             s_commandline = 'montage "%s" -geometry +2+2 -background Black "%s"' % (s_src_images, s_mosaic_file)
             os.system(s_commandline)
@@ -252,6 +259,8 @@ def image_mosaic():
 #=======================================================================================================================
 print '\nXbox 360 Freestyle Dash Screenshot Collector (X360 FSC)'
 print '======================================================='
+
+o_game_database = gamecache.Database()
 
 image_gathering('keep')
 image_rename()
