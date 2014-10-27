@@ -140,7 +140,7 @@ class Ftp:
 
             s_command = 'DELE %s' % o_file_entry.s_full_name
 
-            print 'ftp> %s' % s_command
+            #print 'ftp> %s' % s_command
 
             #self.o_ftp.sendcmd('TYPE I')
             self.o_ftp.delete(o_file_entry.s_full_name)

@@ -2,19 +2,17 @@ import os
 
 import xcrapper
 
-s_CACHE_FILE = os.path.join('media', 'gamecache.txt')
-
 
 class Database:
-    def __init__(self):
+    def __init__(self, s_cache_file):
         self._ds_entries = {}
 
-        if os.path.isfile(s_CACHE_FILE):
-            self._load_data()
-
-        else:
-            o_file = open(s_CACHE_FILE, 'w')
+        if not os.path.isfile(s_cache_file):
+            o_file = open(s_cache_file, 'w')
             o_file.close()
+
+        self._s_cache_file = s_cache_file
+        self._load_data()
 
     def _load_data(self):
         """
@@ -23,7 +21,7 @@ class Database:
         :return: Nothing
         """
 
-        o_file = open(s_CACHE_FILE, 'r')
+        o_file = open(self._s_cache_file, 'r')
 
         for s_line in o_file:
             s_line = s_line.strip()
@@ -49,7 +47,7 @@ class Database:
 
         ld_data_elements = sorted(ld_data_elements, key=lambda d_data_element: d_data_element['title'])
 
-        o_file = open(s_CACHE_FILE, 'w')
+        o_file = open(self._s_cache_file, 'w')
 
         for d_data_element in ld_data_elements:
             o_file.write('%s\t%s\n' % (d_data_element['id'], d_data_element['title'].encode('utf8', 'ignore')))

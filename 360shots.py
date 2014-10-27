@@ -42,6 +42,8 @@ s_MOSAIC_FOLDER = os.path.join('images', 'mosaic')
 
 # Constant constants - Things you shouldn't change because they could break the program
 #=======================================================================================================================
+s_PWD = os.path.dirname(__file__)
+s_CACHE_FILE = os.path.join(s_PWD, 'media', 'gamecache.txt')
 s_DATE_PATTERN = '%Y-%m-%d'
 s_TIME_PATTERN = '%H.%M.%S'
 
@@ -49,6 +51,14 @@ s_TIME_PATTERN = '%H.%M.%S'
 # Helper functions
 #=======================================================================================================================
 def get_name_and_extension(s_filename):
+    """
+    Helper function to obtain the file name and file extension from a full filename.file_extension string.
+
+    :param s_filename: The full file name. i.e. 'my picture.jpg'
+
+    :return: A tuple with two values, filename and file_extension. i.e. 'my picture' and 'jpg'
+    """
+
     if s_filename.find('.') != -1:
         s_name = s_filename.rpartition('.')[0]
         s_ext = s_filename.rpartition('.')[2]
@@ -302,9 +312,9 @@ def image_mosaic():
 print '\nXbox 360 Freestyle Dash Screenshot Collector (X360 FSC)'
 print '======================================================='
 
-o_game_database = gamecache.Database()
+o_game_database = gamecache.Database(s_CACHE_FILE)
 
-#image_gathering('keep')
+image_gathering('keep')
 image_rename()
 image_organize()
 image_mosaic()
