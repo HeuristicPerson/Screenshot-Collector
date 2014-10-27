@@ -9,21 +9,41 @@ from libs import gamecache
 
 # Configurable constants
 #=======================================================================================================================
+
+# FTP configuration
+#---------------------------------------------------------
 s_HOST = '192.168.0.106'
 s_USER = 'xbox'
 s_PASS = 'xbox'
 s_ROOT = '/Hdd1/Freestyle Dash/Plugins/UserData/'
-s_GROUP = 'd'  # Valid values are 'y' yearly, 'm' monthly, 'w' weekly, 'd' daily.
-s_TILE_SIZE = '480x480'
-s_TILE_FONT = 'media/collegia.ttf'
-s_TILE_FONT_SIZE = 64
+
+# Historical archive configuration
+#---------------------------------------------------------
 s_STORE_EXT = 'png'
 
-# Constant constants (really constant constants this time, I swear)
-#=======================================================================================================================
+# Tile mosaic configuration
+#---------------------------------------------------------
+s_TILE_GROUP = 'd'  # Valid values are 'y' yearly, 'm' monthly, 'w' weekly, 'd' daily.
+s_TILE_BACKGROUND = 'Black'
+s_TILE_SIZE = '480x480'
+s_TILE_FOOTER_FONT = 'media/collegia.ttf'
+s_TILE_FOOTER_COLOR = 'White'
+s_TILE_HEADING_FONT = 'media/collegia.ttf'
+s_TILE_HEADING_COLOR = 'White'
+i_TILE_FOOTER_SIZE = 64
+i_TILE_HEADING_SIZE = 128
+
+# Folders configuration
+#--------------------------------------------------------
 s_TEMP_FOLDER = os.path.join('images', 'temp')
 s_HISTORIC_FOLDER = os.path.join('images', 'historic')
 s_MOSAIC_FOLDER = os.path.join('images', 'mosaic')
+
+
+# Constant constants - Things you shouldn't change because they could break the program
+#=======================================================================================================================
+s_DATE_PATTERN = '%Y-%m-%d'
+s_TIME_PATTERN = '%H.%M.%S'
 
 
 # Helper functions
@@ -114,7 +134,7 @@ def image_gathering(s_mode=''):
             if s_mode != 'keep':
                 o_game_file.delete()
 
-	print
+        print
 
         if s_mode != 'keep':
             o_screenshot_dir.delete()
@@ -148,8 +168,8 @@ def image_rename():
             o_date = o_date_time.date()
             o_time = o_date_time.time()
 
-            s_baked_date = o_date.strftime('%Y-%m-%d')
-            s_baked_time = o_time.strftime('%H:%M:%S')
+            s_baked_date = o_date.strftime(s_DATE_PATTERN)
+            s_baked_time = o_time.strftime(s_TIME_PATTERN)
             s_title = o_game_database.get_title_by_id(s_game_id)
 
             s_new_filename = os.path.join(s_TEMP_FOLDER, '%s %s %s - %s' % (s_baked_date, s_baked_time, s_game_id, s_title))
@@ -185,26 +205,31 @@ def image_mosaic():
     o_date_now = datetime.date.today()
 
     # Grouping name configuration to create the mosaics and to check previous states
-    if s_GROUP == 'd':
+    if s_TILE_GROUP == 'd':
         s_date_format = '%Y-%j'
         f_day_delta = 1.0
-    elif s_GROUP == 'w':
+        s_heading_tpl = '%d-%m-%Y'
+    elif s_TILE_GROUP == 'w':
         s_date_format = '%Y-%U'
         f_day_delta = 7.0
-    elif s_GROUP == 'm':
+        s_heading_tpl = 'Semana %U de %Y'
+    elif s_TILE_GROUP == 'm':
         s_date_format = '%Y-%m'
         # To avoid extra complexity with 28-31 days months and leap years: 1 month = 365.25 days / 12 = 30.4375 days
         f_day_delta = 30.4375
-    elif s_GROUP == 'y':
+        s_heading_tpl = '%B de %Y'
+    elif s_TILE_GROUP == 'y':
         s_date_format = '%Y'
         f_day_delta = 365.25
+        s_heading_tpl = '%Y'
     else:
-        print 'ERROR: Unknown grouping periodicity "%s"' % s_GROUP
+        print 'ERROR: Unknown grouping periodicity "%s"' % s_TILE_GROUP
         sys.exit()
 
-    s_date_now = o_date_now.strftime(s_date_format)
     o_date_prev = o_date_now - datetime.timedelta(days=f_day_delta)
     s_date_prev = o_date_prev.strftime(s_date_format)
+
+    s_heading = o_date_prev.strftime(s_heading_tpl)
 
     # Previous mosaic creation in case it doesn't already exist
     s_prev_mosaic_file = 'mosaic_%s.jpg' % s_date_prev
@@ -220,7 +245,7 @@ def image_mosaic():
 
             s_file_name, s_file_ext = get_name_and_extension(s_archived_image)
 
-            o_file_date = datetime.datetime.strptime(s_file_name[0:19], '%Y-%m-%d %H:%M:%S')
+            o_file_date = datetime.datetime.strptime(s_file_name[0:19], '%s %s' % (s_DATE_PATTERN, s_TIME_PATTERN))
             s_file_date = o_file_date.strftime(s_date_format)
 
             if s_file_date == s_date_prev:
@@ -230,21 +255,38 @@ def image_mosaic():
 
         # Watermarking the images with the name of the game
         if b_files_to_process:
+            # Creating every tile
             for s_image in get_files_in(s_TEMP_FOLDER):
                 s_img_full_path = os.path.join(s_TEMP_FOLDER, s_image)
                 s_file_name, s_file_ext = get_name_and_extension(s_image)
                 s_title = s_file_name.split('-')[3].strip()
 
-                s_commandline = 'convert "%s" -background Black ' \
-                                '-fill White -font "%s" -pointsize %s label:\'%s\' -gravity Center -append ' \
-                                '-resize %s "%s"' % (s_img_full_path, s_TILE_FONT, s_TILE_FONT_SIZE, s_title, s_TILE_SIZE,
-                                                     s_img_full_path)
+                s_commandline = 'convert "%s" -background %s ' \
+                                '-fill %s -font "%s" -pointsize %i label:\'%s\' -gravity Center -append ' \
+                                '-resize %s "%s"'\
+                                % (s_img_full_path, s_TILE_BACKGROUND,
+                                   s_TILE_FOOTER_COLOR, s_TILE_FOOTER_FONT, i_TILE_FOOTER_SIZE, s_title,
+                                   s_TILE_SIZE, s_img_full_path)
                 os.system(s_commandline)
 
+            # Composing the tiles
             s_src_images = os.path.join(s_TEMP_FOLDER, '*.%s' % s_STORE_EXT)
             s_mosaic_file = os.path.join(s_MOSAIC_FOLDER, s_prev_mosaic_file)
-            s_commandline = 'montage "%s" -geometry +2+2 -background Black "%s"' % (s_src_images, s_mosaic_file)
+
+            s_commandline = 'montage "%s" -geometry +2+2 -background %s "%s"' % (s_src_images, s_TILE_BACKGROUND, s_mosaic_file)
             os.system(s_commandline)
+
+            # Adding an extra title at the top of the image
+            s_commandline = 'convert "%s" ' \
+                            '-background %s ' \
+                            '-fill %s -font "%s" -pointsize %i label:\'%s\' +swap -gravity Center -append ' \
+                            '"%s"'\
+                            % (s_mosaic_file,
+                               s_TILE_BACKGROUND,
+                               s_TILE_HEADING_COLOR, s_TILE_HEADING_FONT, i_TILE_HEADING_SIZE, s_heading,
+                               s_mosaic_file)
+            os.system(s_commandline)
+
             print 'Mosaic: Generated mosaic with %i screenshots.' % i_images_to_add
 
         else:
@@ -262,7 +304,7 @@ print '======================================================='
 
 o_game_database = gamecache.Database()
 
-image_gathering('keep')
+#image_gathering('keep')
 image_rename()
 image_organize()
 image_mosaic()
