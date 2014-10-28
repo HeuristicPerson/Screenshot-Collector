@@ -138,10 +138,6 @@ class Ftp:
             s_original_path = self.o_ftp.pwd()
             self.o_ftp.cwd(o_file_entry.s_root)
 
-            s_command = 'DELE %s' % o_file_entry.s_full_name
-
-            #print 'ftp> %s' % s_command
-
             #self.o_ftp.sendcmd('TYPE I')
             self.o_ftp.delete(o_file_entry.s_full_name)
 

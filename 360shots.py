@@ -100,6 +100,9 @@ def clean_temp():
 
 # Image gathering from Xbox 360
 #=======================================================================================================================
+
+# TODO: Make that everything appart from image gathering works if the FTP is not present to create the mosaic.
+
 def image_gathering(s_mode=''):
     """
     Function to gather all the screenshots from Xbox 360.
