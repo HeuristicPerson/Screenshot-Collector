@@ -272,7 +272,7 @@ def image_mosaic():
             for s_image in get_files_in(s_TEMP_FOLDER):
                 s_img_full_path = os.path.join(s_TEMP_FOLDER, s_image)
                 s_file_name, s_file_ext = get_name_and_extension(s_image)
-                s_title = s_file_name.split('-')[3].strip()
+                s_title = o_game_database.get_title_by_id(s_file_name[20:28])
 
                 s_commandline = 'convert "%s" -background %s ' \
                                 '-fill %s -font "%s" -pointsize %i label:\'%s\' -gravity Center -append ' \

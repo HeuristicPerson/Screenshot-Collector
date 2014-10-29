@@ -4,17 +4,35 @@ import re
 import sys
 
 
-class Ftp:
-    def __init__(self, s_host, s_user, s_pass, i_timeout=5):
+class FtpCfg:
+    def __init__(self):
+        self.s_name = ''            # Name of the ftp (this name is going to be used to check the id->title database)
+        self.s_host = ''            # The name of the host. i.e. '192.168.0.100'
+        self.s_user = ''            # The name of the user of the FTP. i.e. 'john'
+        self.s_pwd = ''             # The password for the user. i.e. '123456'
+        self.s_root = ''            # Root folder of the FTP where screenshots are located. i.e. '/data/screenshots/'
+        self.i_timeout = 5          # Timeout
+        self.ls_get_exts = ('')     # File extensions to download (case insensitive). i.e. ('jpg', 'png')
+        self.ls_del_exts = ('')     # File extensions to delete (case insensitive). i.e. ('bak', 'txt')
+        self.b_recursive = True     # Should search in sub-folders inside the root folder?
+        self.b_file_keep = True     # Should the downloaded files be kept in the FTP?
+        self.b_dir_keep = True      # Should the empty folders be kept in the FTP?
 
-        self.s_host = s_host
+
+class Ftp:
+    def __init__(self, o_ftp_cfg):
+
+        self.b_connected = False
 
         try:
-            self.o_ftp = ftplib.FTP(host=s_host, user=s_user, passwd=s_pass, timeout=i_timeout)
-            #print 'FTP> %s connected...' % s_host
+            self.o_ftp = ftplib.FTP(host=o_ftp_cfg.s_host,
+                                    user=o_ftp_cfg.s_user,
+                                    passwd=o_ftp_cfg.s_pwd,
+                                    timeout=o_ftp_cfg.i_timeout)
+            self.b_connected = True
+
         except ftplib.all_errors:
-            print 'ERROR: FTP server not found.'
-            sys.exit()
+            self.o_ftp = None
 
     def __str__(self):
         s_output = '<Ftp: %s>' % self.o_ftp.host

@@ -56,6 +56,8 @@ class Database:
 
     def get_title_by_id(self, s_id):
 
+        s_id = s_id.strip()
+
         try:
             s_title = self._ds_entries[s_id]
 
