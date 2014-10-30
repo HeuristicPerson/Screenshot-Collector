@@ -9,7 +9,7 @@ class FtpCfg:
         self.s_name = ''            # Name of the ftp (this name is going to be used to check the id->title database)
         self.s_host = ''            # The name of the host. i.e. '192.168.0.100'
         self.s_user = ''            # The name of the user of the FTP. i.e. 'john'
-        self.s_pwd = ''             # The password for the user. i.e. '123456'
+        self.s_pass = ''             # The password for the user. i.e. '123456'
         self.s_root = ''            # Root folder of the FTP where screenshots are located. i.e. '/data/screenshots/'
         self.i_timeout = 5          # Timeout
         self.ls_get_exts = ('')     # File extensions to download (case insensitive). i.e. ('jpg', 'png')
@@ -24,18 +24,28 @@ class Ftp:
 
         self.b_connected = False
 
+        self.s_host = o_ftp_cfg.s_host
+        self.s_user = o_ftp_cfg.s_user
+        self.s_pass = o_ftp_cfg.s_pass
+        self.i_timeout = o_ftp_cfg.i_timeout
+
         try:
-            self.o_ftp = ftplib.FTP(host=o_ftp_cfg.s_host,
-                                    user=o_ftp_cfg.s_user,
-                                    passwd=o_ftp_cfg.s_pwd,
-                                    timeout=o_ftp_cfg.i_timeout)
+            self.o_ftp = ftplib.FTP(host=self.s_host,
+                                    user=self.s_user,
+                                    passwd=self.s_pass,
+                                    timeout=self.i_timeout)
             self.b_connected = True
 
         except ftplib.all_errors:
             self.o_ftp = None
 
     def __str__(self):
-        s_output = '<Ftp: %s>' % self.o_ftp.host
+        if self.b_connected:
+            s_connected = 'connected'
+        else:
+            s_connected = 'NOT connected'
+
+        s_output = '>>Ftp: %s:%s @ %s %s' % (self.s_user, self.s_pass, self.s_host, s_connected)
         return s_output
 
     def cwd(self, s_dirname):
@@ -51,7 +61,7 @@ class Ftp:
 
         return self.o_ftp.pwd()
 
-    def list_elements(self, s_root=''):
+    def list_elements(self, s_root='', lo_prev_elements=[], b_recursive=False):
         """
         Method to return a list containing all the FtpFileEntry objects corresponding to the elements in the CWD of the
         ftp.
@@ -59,24 +69,30 @@ class Ftp:
         :return: A list of FtpFileEntry objects.
         """
 
-        s_current_dir = self.o_ftp.pwd()
+        if self.b_connected:
 
-        if s_root != '':
-            self.cwd(s_root)
+            print 'Getting elements from %s' % s_root
 
-        lo_elements = []
+            s_current_dir = self.o_ftp.pwd()
 
-        for s_line in self.o_ftp.nlst():
+            if s_root != '':
+                self.cwd(s_root)
 
-            o_file_entry = FtpFileEntry(self, s_root, s_line, s_method='from_nlst_line')
+            for s_line in self.o_ftp.nlst():
 
-            # Only actual files, 'f', and directories, 'd' are kept. Fake dirs like '..' are avoid.
-            if o_file_entry.s_type in ('f', 'd'):
-                lo_elements.append(o_file_entry)
+                o_file_entry = _FtpFileEntry(self, s_root, s_line, s_method='from_nlst_line')
 
-        self.cwd(s_current_dir)
+                # Only actual files, 'f', and directories, 'd' are kept. Fake dirs like '..' are avoid.
+                if o_file_entry.s_type in ('f', 'd'):
+                    lo_prev_elements.append(o_file_entry)
 
-        return lo_elements
+                    if b_recursive:
+                        if o_file_entry.s_type == 'd':
+                            self.list_elements(o_file_entry.s_full_path, lo_prev_elements, b_recursive=True)
+
+            self.cwd(s_current_dir)
+
+        return lo_prev_elements
 
     def list_dirs(self, s_root):
         """
@@ -185,7 +201,7 @@ class Ftp:
         self.o_ftp.retrbinary(cmd=s_cmd, callback=s_callback, blocksize=i_blocksize, rest=i_rest)
 
 
-class FtpFileEntry:
+class _FtpFileEntry:
 
     def __init__(self, o_ftp, s_root, s_input, s_method='from_nlst_line'):
 

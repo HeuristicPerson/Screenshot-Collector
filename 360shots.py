@@ -43,7 +43,7 @@ s_MOSAIC_FOLDER = os.path.join('images', 'mosaic')
 # Constant constants - Things you shouldn't change because they could break the program
 #=======================================================================================================================
 s_PWD = os.path.dirname(__file__)
-s_CACHE_FILE = os.path.join(s_PWD, 'media', 'gamecache.txt')
+s_CACHE_FILE = os.path.join(s_PWD, 'media', 'xbox360.txt')
 s_DATE_PATTERN = '%Y-%m-%d'
 s_TIME_PATTERN = '%H.%M.%S'
 
