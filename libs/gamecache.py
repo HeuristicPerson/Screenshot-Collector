@@ -4,7 +4,8 @@ import xcrapper
 
 
 class Database:
-    def __init__(self, s_cache_file):
+    def __init__(self, s_name, s_cache_file):
+        self.s_name = s_name
         self._ds_entries = {}
 
         if not os.path.isfile(s_cache_file):
@@ -62,7 +63,7 @@ class Database:
             s_title = self._ds_entries[s_id]
 
         except KeyError:
-            s_title = xcrapper.id_to_title(s_id)
+            s_title = xcrapper.get_title_by_id(self.s_name, s_id)
 
             self._ds_entries[s_id] = s_title
             self._write_data()

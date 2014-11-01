@@ -71,8 +71,6 @@ class Ftp:
 
         if self.b_connected:
 
-            print 'Getting elements from %s' % s_root
-
             s_current_dir = self.o_ftp.pwd()
 
             if s_root != '':
@@ -209,6 +207,7 @@ class _FtpFileEntry:
         self.o_ftp = None                   # Every file entry points to an ftp object.
 
         self.i_size = 0                     # File size (in bytes?)
+        self.s_size = ''                    # File size (human readable format)
         self.s_date = ''                    # File date (not used by now)
         self.s_full_name = ''               # Full file name i.e. 'picture.jpg'
         self.s_name = ''                    # Short file name i.e. 'picture'
@@ -249,6 +248,7 @@ class _FtpFileEntry:
             s_permission_unknown_group_user = s_line.rpartition('    ')[0]
 
             self.i_size = int(s_size_month_day_year_name.split(' ')[0])
+            self.s_size = human_size(self.i_size)
             self.s_date = ''  # TODO: Read date values and build a proper date object
             self.s_full_name = s_size_month_day_year_name.split(' ', 5)[4]
 
@@ -317,6 +317,7 @@ class _FtpFileEntry:
         if o_source is not None:
             self.o_ftp = o_source.o_ftp
             self.i_size = o_source.i_size
+            self.s_size = o_source.s_size
             self.s_date = o_source.s_date
             self.s_full_name = o_source.s_full_name
             self.s_name = o_source.s_name

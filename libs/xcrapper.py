@@ -10,10 +10,27 @@ only, h1 element.
 import requests
 import lxml.html
 
-s_URL_TEMPLATE = 'http://marketplace.xbox.com/en-US/Product/Super-Meat-Boy/66acd000-77fe-1000-9115-d802{GAME_ID}'
+
+def get_title_by_id(s_system, s_id):
+    if s_system == 'xbox360':
+        s_output = _xbox360(s_id)
+
+    else:
+        s_output = '--unknown--'
+
+    return s_output
 
 
-def id_to_title(s_id):
+def _xbox360(s_id):
+    """
+    Function to obtain a game's title from xbox.com from its 8 character hexadecimal id.
+
+    :param s_id: The id of the game. i.e.
+    :return:
+    """
+
+    s_URL_TEMPLATE = 'http://marketplace.xbox.com/en-US/Product/Super-Meat-Boy/66acd000-77fe-1000-9115-d802{GAME_ID}'
+
     if s_id == '00000000':
         s_title = 'Freestyle Dash'
 
