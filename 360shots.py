@@ -3,7 +3,7 @@ import os
 import shutil
 import sys
 
-from libs import ftpextra
+from libs import ftp
 from libs import gamecache
 
 
@@ -112,7 +112,7 @@ def image_gathering(s_mode=''):
     :return:
     """
 
-    o_ftp = ftpextra.Ftp(s_HOST, s_USER, s_PASS)
+    o_ftp = ftp.Ftp(s_HOST, s_USER, s_PASS)
     print 'FTP %s connected...' % s_HOST
     print
 
@@ -133,7 +133,7 @@ def image_gathering(s_mode=''):
         print '       Game: %s - %s' % (o_game_dir.s_name, o_game_database.get_title_by_id(o_game_dir.s_name))
 
         s_game_screenshot_folder = '%s/Screenshots' % o_game_dir.s_full_path
-        o_screenshot_dir = ftpextra.FtpFileEntry(o_ftp, s_game_screenshot_folder, '', s_method='from_path')
+        o_screenshot_dir = ftp.FtpFileEntry(o_ftp, s_game_screenshot_folder, '', s_method='from_path')
 
         lo_game_files = o_ftp.list_files(s_game_screenshot_folder)
 
