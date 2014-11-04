@@ -127,7 +127,7 @@ def image_gathering(s_mode=''):
     print 'Games found: %i' % len(lo_game_dirs)
     print
 
-    # For each game we download all the files included, which are '.bmp' and '.meta' files.
+    # For each game we download_file all the files included, which are '.bmp' and '.meta' files.
     for o_game_dir in lo_game_dirs:
 
         print '       Game: %s - %s' % (o_game_dir.s_name, o_game_database.get_title_by_id(o_game_dir.s_name))
@@ -139,7 +139,7 @@ def image_gathering(s_mode=''):
 
         for o_game_file in lo_game_files:
 
-            s_size = o_game_file.download('flat', s_TEMP_FOLDER)
+            s_size = o_game_file.download_file('flat', s_TEMP_FOLDER)
             print '       File: %s %s' % (o_game_file.s_full_name, s_size)
 
             i_file_counter += 1

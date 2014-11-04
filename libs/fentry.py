@@ -1,3 +1,6 @@
+import files
+
+
 class FileEntry:
     """
     Class to archive information about File Entries. A file entry is a file or a directory located in one source that can
@@ -37,7 +40,7 @@ class FileEntry:
 
     def set_size(self, i_size):
         self.i_size = i_size
-        self.s_size = human_size(self.i_size)
+        self.s_size = files.human_size(self.i_size)
 
     def __str__(self):
         s_output = ''
@@ -56,29 +59,3 @@ class FileEntry:
         return s_output
 
 
-def human_size(i_size):
-    """
-    Helper method to generate 'human readable' file sizes from raw number of bytes size.
-
-    :return: Nothing. It changes the value of self.s_size, a string indicating the file size using the appropiate
-             units. i.e. '1.2 KB'
-    """
-
-    s_output = ''
-
-    for s_unit in ('bytes', 'KB', 'MB', 'GB'):
-
-        if -1024.0 < i_size < 1024.0:
-            if s_unit != 'bytes':
-                s_output = '%3.1f %s' % (i_size, s_unit)
-            else:
-                s_output = '%3.0f %s' % (i_size, s_unit)
-
-            break
-
-        i_size /= 1024.0
-
-    if s_output == '':
-        s_output = '%3.1f %s' % (i_size, 'TB')
-
-    return s_output.strip()

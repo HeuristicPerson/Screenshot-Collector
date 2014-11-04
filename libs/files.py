@@ -55,3 +55,35 @@ def get_name_and_extension(s_filename):
         s_ext = ''
 
     return s_name, s_ext
+
+
+def get_size_of(s_filename):
+    if os.path.isfile(s_filename):
+        return os.path.getsize(s_filename)
+
+
+def human_size(i_size):
+    """
+    Helper function to generate 'human readable' file sizes from raw number of bytes size.
+
+    :return: A string indicating the size with one decimal value and the proper units. i.e. '1.2 KB'
+    """
+
+    s_output = ''
+
+    for s_unit in ('bytes', 'KB', 'MB', 'GB'):
+
+        if -1024.0 < i_size < 1024.0:
+            if s_unit != 'bytes':
+                s_output = '%3.1f %s' % (i_size, s_unit)
+            else:
+                s_output = '%3.0f %s' % (i_size, s_unit)
+
+            break
+
+        i_size /= 1024.0
+
+    if s_output == '':
+        s_output = '%3.1f %s' % (i_size, 'TB')
+
+    return s_output.strip()

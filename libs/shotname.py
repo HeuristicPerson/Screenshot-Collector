@@ -7,14 +7,16 @@ for example:
 """
 
 import datetime
+import re
 import sys
 
 
-# Constants
-#=======================================================================================================================
+#[ CONSTANTS ]==========================================================================================================
 s_DATE_FORMAT = '%Y.%m.%d'
 s_TIME_FORMAT = '%H.%M.%S'
 s_HISTORIC_FORMAT = '%s %s - %s %s - %s'
+s_SANITATION_PATTERN = r'[^\w\d \.\-_]'
+#=======================================================================================================================
 
 
 def raw_to_historic(s_orig_name, o_games_db):
@@ -23,6 +25,9 @@ def raw_to_historic(s_orig_name, o_games_db):
     else:
         print 'ERROR: Games database not found'
         sys.exit()
+
+    # Title sanitation
+    s_output = re.sub(s_SANITATION_PATTERN, '', s_output, flags=re.I)
 
     return s_output
 

@@ -1,46 +1,12 @@
-"""
-Small FTP library. It contains the Ftp class which is used to connect and perform different actions in a FTP and a
-FtpFileEntry which is used to handle the contents of the ftp (download/delete are the main actions). Two twin libraries
-come with this one to handle samba file entries and standard directory file entries.
-
-The purpose of those three libraries is having the same methods for file entries in FTP, Samba and Standard directories.
-So, the image collector can define different sources for screenshots and can interact with them no matter what they are.
-
-(I'm pretty sure a good programmer could do this in a much more simple/fancy way. But this the way I know to do it...
-"""
-
-import ftplib
 import os
-import re
-import sys
 
-import fentry
+class Dir:
+    def __init__(self, s_root):
 
-
-class Ftp:
-    def __init__(self, s_host, s_user, s_pass, i_timeout):
-
-        self.b_connected = False
-
-        try:
-            self.o_ftp = ftplib.FTP(host=s_host, user=s_user, passwd=s_pass, timeout=i_timeout)
+        if os.path.isdir(s_root):
             self.b_connected = True
-
-        except ftplib.all_errors:
-            self.o_ftp = None
-
-    def cwd(self, s_dirname):
-        # todo: add error handling code when s_dirname doesn't exist
-        self.o_ftp.cwd(s_dirname)
-
-    def pwd(self):
-        """
-        Method to get the current working directory of the ftp.
-
-        :return: An string indicating the current directory. i.e. '/abc/foo/'
-        """
-
-        return self.o_ftp.pwd()
+        else:
+            self.b_connected = False
 
     def list_elements(self, s_root='', lo_prev_elements=[], b_recursive=False):
         """
@@ -151,7 +117,7 @@ class Ftp:
         if o_file_entry.s_type == 'f':
             self._download_file(o_file_entry, s_dest, s_mode)
         elif o_file_entry.s_type == 'd':
-            # todo: create a proper download method for ftp directories
+            # todo: create a proper download_file method for ftp directories
             pass
         else:
             print 'ERROR: You are downloading an unknown o_file_entry "%s"' % o_file_entry.s_type
@@ -159,7 +125,7 @@ class Ftp:
 
     def _download_file(self, o_file_entry, s_dest, s_mode='flat'):
         """
-        Method to download a file from the ftp server. The file is downloaded without any kind of folder structure to
+        Method to download_file a file from the ftp server. The file is downloaded without any kind of folder structure to
         the same place where the script is being executed from.
 
         :param o_file_entry: I must be a real file entry (self.s_type = 'f'). Otherwise an error is printed.
@@ -181,25 +147,25 @@ class Ftp:
             elif s_mode == 'tree':
                 s_dst_path = os.path.join(s_dest, o_file_entry.s_root, o_file_entry.s_full_name)
             else:
-                print 'ERROR: You are trying to download a file with unknown s_mode = %s' % s_mode
+                print 'ERROR: You are trying to download_file a file with unknown s_mode = %s' % s_mode
                 sys.exit()
 
             o_download_file = open(s_dst_path, 'wb')
 
             s_command = 'RETR %s' % o_file_entry.s_full_name
 
-            self.o_ftp.sendcmd('TYPE I')
-            self.o_ftp.retrbinary(s_command, o_download_file.write)
+            self.o_ftp._sendcmd('TYPE I')
+            self.o_ftp._retrbinary(s_command, o_download_file.write)
 
             o_download_file.close()
 
             self.o_ftp.cwd(s_original_path)
 
         elif o_file_entry.s_type == 'd':
-            print 'ERROR: You are trying to download a directory as a file'
+            print 'ERROR: You are trying to download_file a directory as a file'
 
         else:
-            print 'ERROR: You are trying to download a non-existent file entry'
+            print 'ERROR: You are trying to download_file a non-existent file entry'
 
     def delete(self, o_file_entry):
         if o_file_entry.s_type == 'f':
@@ -219,7 +185,7 @@ class Ftp:
             s_original_path = self.o_ftp.pwd()
             self.o_ftp.cwd(o_file_entry.s_root)
 
-            #self.o_ftp.sendcmd('TYPE I')
+            #self.o_ftp._sendcmd('TYPE I')
             self.o_ftp.delete(o_file_entry.s_full_name)
 
             self.o_ftp.cwd(s_original_path)
@@ -234,15 +200,12 @@ class Ftp:
         if o_file_entry.s_type == 'd':
             # BIG WARNING HERE: After deleting a directory you are returned to the parent folder of the deleted one!!!
             self.o_ftp.cwd(o_file_entry.s_root)
-            self.o_ftp.rmd(o_file_entry.s_full_name)
+            try:
+                self.o_ftp.rmd(o_file_entry.s_full_name)
+            except ftplib.error_perm:
+                pass
 
         elif o_file_entry.s_type == 'f':
             print 'ERROR: You are trying to delete a file as a directory'
         else:
             print 'ERROR: You are trying to delete a non-existent file entry as a directory'
-
-    def sendcmd(self, s_cmd):
-        self.o_ftp.sendcmd(s_cmd)
-
-    def retrbinary(self, s_cmd, s_callback, i_blocksize=8192, i_rest=None):
-        self.o_ftp.retrbinary(cmd=s_cmd, callback=s_callback, blocksize=i_blocksize, rest=i_rest)
