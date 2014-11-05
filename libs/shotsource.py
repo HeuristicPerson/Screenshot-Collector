@@ -2,7 +2,6 @@ import ftplib
 import os
 import sys
 
-import directory
 import fentry
 import files
 import gamecache
@@ -228,15 +227,6 @@ class Ftp:
     def cwd(self, s_dirname):
         # todo: add error handling code when s_dirname doesn't exist
         self.o_ftp.cwd(s_dirname)
-
-    def pwd(self):
-        """
-        Method to get the current working directory of the ftp.
-
-        :return: An string indicating the current directory. i.e. '/abc/foo/'
-        """
-
-        return self.o_ftp.pwd()
 
     def list_file_entries(self, s_root='', lo_prev_elements=[], b_recursive=False):
         """
