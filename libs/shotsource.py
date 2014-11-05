@@ -224,40 +224,42 @@ class Ftp:
         except ftplib.all_errors:
             self.o_ftp = None
 
-    def cwd(self, s_dirname):
-        # todo: add error handling code when s_dirname doesn't exist
-        self.o_ftp.cwd(s_dirname)
-
-    def list_file_entries(self, s_root='', lo_prev_elements=[], b_recursive=False):
+    def _delete_file(self, o_file_entry):
         """
-        Method to return a list containing all the FtpFileEntry objects corresponding to the elements in the CWD of the
-        ftp.
+        Method to delete a file from the ftp server.
 
-        :return: A list of FtpFileEntry objects.
+        :param o_file_entry: I must be a real file entry (self.s_type = 'f'). Otherwise an error is printed.
+
+        :return: Nothing.
         """
+        if o_file_entry.s_type == 'f':
+            s_original_path = self.o_ftp.pwd()
+            self.o_ftp.cwd(o_file_entry.s_root)
 
-        if self.b_connected:
+            #self.o_ftp._sendcmd('TYPE I')
+            self.o_ftp.delete(o_file_entry.s_full_name)
 
-            s_current_dir = self.o_ftp.pwd()
+            self.o_ftp.cwd(s_original_path)
 
-            if s_root != '':
-                self.cwd(s_root)
+        elif o_file_entry.s_type == 'd':
+            print 'ERROR: You are trying to delete a directory as a file'
+        else:
+            print 'ERROR: You are trying to delete a non-existent file entry'
 
-            for s_line in self.o_ftp.nlst():
+    def _delete_dir(self, o_file_entry):
 
-                o_file_entry = self._file_entry_from_nlst_line(s_root, s_line)
+        if o_file_entry.s_type == 'd':
+            # BIG WARNING HERE: After deleting a directory you are returned to the parent folder of the deleted one!!!
+            self.o_ftp.cwd(o_file_entry.s_root)
+            try:
+                self.o_ftp.rmd(o_file_entry.s_full_name)
+            except ftplib.error_perm:
+                pass
 
-                 # Only actual files, 'f', and directories, 'd' are kept. Fake dirs like '..' are avoid.
-                if o_file_entry.s_type in ('f', 'd'):
-                    lo_prev_elements.append(o_file_entry)
-
-                    if b_recursive:
-                        if o_file_entry.s_type == 'd':
-                            self.list_file_entries(o_file_entry.s_full_path, lo_prev_elements, b_recursive=True)
-
-            self.cwd(s_current_dir)
-
-        return lo_prev_elements
+        elif o_file_entry.s_type == 'f':
+            print 'ERROR: You are trying to delete a file as a directory'
+        else:
+            print 'ERROR: You are trying to delete a non-existent file entry as a directory'
 
     @staticmethod
     def _file_entry_from_nlst_line(s_root, s_nlst_line):
@@ -300,39 +302,36 @@ class Ftp:
 
         return o_file_entry
 
-    def list_dirs(self, s_root):
+    def list_file_entries(self, s_root='', lo_prev_elements=[], b_recursive=False):
         """
-        Similar to list_elements method but only directory elements are returned.
+        Method to return a list containing all the FtpFileEntry objects corresponding to the elements in the CWD of the
+        ftp.
 
         :return: A list of FtpFileEntry objects.
         """
 
-        lo_elements = self.list_elements(s_root)
+        if self.b_connected:
 
-        lo_dirs = []
+            s_current_dir = self.o_ftp.pwd()
 
-        for o_element in lo_elements:
-            if o_element.s_type == 'd':
-                lo_dirs.append(o_element)
+            if s_root != '':
+                self.o_ftp.cwd(s_root)
 
-        return lo_dirs
+            for s_line in self.o_ftp.nlst():
 
-    def list_files(self, s_root):
-        """
-        Similar to list_elements method but only file elements are returned.
+                o_file_entry = self._file_entry_from_nlst_line(s_root, s_line)
 
-        :return: A list of FtpFileEntry objects.
-        """
+                 # Only actual files, 'f', and directories, 'd' are kept. Fake dirs like '..' are avoid.
+                if o_file_entry.s_type in ('f', 'd'):
+                    lo_prev_elements.append(o_file_entry)
 
-        lo_elements = self.list_file_entries(s_root)
+                    if b_recursive:
+                        if o_file_entry.s_type == 'd':
+                            self.list_file_entries(o_file_entry.s_full_path, lo_prev_elements, b_recursive=True)
 
-        lo_files = []
+            self.o_ftp.cwd(s_current_dir)
 
-        for o_element in lo_elements:
-            if o_element.s_type == 'f':
-                lo_files.append(o_element)
-
-        return lo_files
+        return lo_prev_elements
 
     def download_file(self, o_file_entry, s_dest):
         if o_file_entry.s_type == 'f':
@@ -365,39 +364,17 @@ class Ftp:
         elif o_file_entry.s_type == 'd':
             self._delete_dir(o_file_entry)
 
-    def _delete_file(self, o_file_entry):
-        """
-        Method to delete a file from the ftp server.
+#=======================================================================================================================
+#=======================================================================================================================
+class Dir:
+    def __init__(self, s_root):
+        pass
 
-        :param o_file_entry: I must be a real file entry (self.s_type = 'f'). Otherwise an error is printed.
+    def list_file_entries(self, s_root='', lo_prev_elements=[], b_recursive=False):
+        pass
 
-        :return: Nothing.
-        """
-        if o_file_entry.s_type == 'f':
-            s_original_path = self.o_ftp.pwd()
-            self.o_ftp.cwd(o_file_entry.s_root)
+    def download_file(self, o_file_entry, s_dest):
+        pass
 
-            #self.o_ftp._sendcmd('TYPE I')
-            self.o_ftp.delete(o_file_entry.s_full_name)
-
-            self.o_ftp.cwd(s_original_path)
-
-        elif o_file_entry.s_type == 'd':
-            print 'ERROR: You are trying to delete a directory as a file'
-        else:
-            print 'ERROR: You are trying to delete a non-existent file entry'
-
-    def _delete_dir(self, o_file_entry):
-
-        if o_file_entry.s_type == 'd':
-            # BIG WARNING HERE: After deleting a directory you are returned to the parent folder of the deleted one!!!
-            self.o_ftp.cwd(o_file_entry.s_root)
-            try:
-                self.o_ftp.rmd(o_file_entry.s_full_name)
-            except ftplib.error_perm:
-                pass
-
-        elif o_file_entry.s_type == 'f':
-            print 'ERROR: You are trying to delete a file as a directory'
-        else:
-            print 'ERROR: You are trying to delete a non-existent file entry as a directory'
+    def delete(self, o_file_entry):
+        pass
