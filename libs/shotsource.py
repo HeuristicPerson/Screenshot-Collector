@@ -63,7 +63,7 @@ class ShotSource():
         if self.b_connected:
 
             if self.s_type == 'dir':
-                lo_file_entries = self.o_source.list_file_entries()
+                lo_file_entries = self.o_source.list_file_entries(self.s_root, b_recursive=self.b_recursive)
 
             elif self.s_type == 'ftp':
                 lo_file_entries = self.o_source.list_file_entries(self.s_root, b_recursive=self.b_recursive)
@@ -80,7 +80,7 @@ class ShotSource():
     def _connect(self):
         if self.s_type == 'dir':
             # todo: add support for folders
-            self.o_source = directory.Dir()
+            self.o_source = Dir(self.s_root)
             self.b_connected = True
 
         elif self.s_type == 'ftp':
@@ -124,21 +124,25 @@ class ShotSource():
         i_dirs_deleted = 0
 
         for o_file_entry in lo_file_entries:
-            if o_file_entry.s_type == 'f' and o_file_entry.s_ext in self.ls_get_exts:
+
+            # Downloading of files with selected extensions
+            if o_file_entry.if_file() and o_file_entry.s_ext in self.ls_get_exts:
                 print 'Downloaded: %s  %s' % (o_file_entry.s_full_name, o_file_entry.s_size)
                 self.o_source.download_file(o_file_entry, s_dest)
                 i_files_downloaded += 1
                 i_bytes_downloaded += o_file_entry.i_size
 
-            if o_file_entry.s_type == 'f' and o_file_entry.s_ext.lower() in self.ls_del_exts:
+            # Deletion of files with selected extensions
+            if o_file_entry.is_file() and o_file_entry.s_ext.lower() in self.ls_del_exts:
                 print '   Deleted: %s  %s' % (o_file_entry.s_full_name, o_file_entry.s_size)
                 self.o_source.delete(o_file_entry)
                 i_files_deleted += 1
                 i_bytes_deleted += o_file_entry.i_size
 
-            if o_file_entry.s_type == 'd' and not self.b_dir_keep:
-                self.o_source.delete(o_file_entry)
-                i_dirs_deleted += 1
+            # Removal of empty folders
+            if o_file_entry.is_dir() and not self.b_dir_keep:
+                if self.o_source.delete(o_file_entry):
+                    i_dirs_deleted += 1
 
         print '            Files downloaded: %i (%s)' % (i_files_downloaded, files.human_size(i_bytes_downloaded))
         print '               Files deleted: %i (%s)' % (i_files_deleted, files.human_size(i_bytes_deleted))
@@ -191,6 +195,7 @@ class ShotSource():
                                                                  100.0*i_mod_size/i_orig_size)
         else:
             print '              Archived size: %s (%0.1f%%)' % (files.human_size(i_mod_size), 0.0)
+        print
 
     def find_dat_file(self, s_folder):
         """
@@ -232,7 +237,7 @@ class Ftp:
 
         :return: Nothing.
         """
-        if o_file_entry.s_type == 'f':
+        if o_file_entry.is_file():
             s_original_path = self.o_ftp.pwd()
             self.o_ftp.cwd(o_file_entry.s_root)
 
@@ -241,25 +246,20 @@ class Ftp:
 
             self.o_ftp.cwd(s_original_path)
 
-        elif o_file_entry.s_type == 'd':
-            print 'ERROR: You are trying to delete a directory as a file'
-        else:
-            print 'ERROR: You are trying to delete a non-existent file entry'
-
     def _delete_dir(self, o_file_entry):
+
+        b_deleted = False
 
         if o_file_entry.s_type == 'd':
             # BIG WARNING HERE: After deleting a directory you are returned to the parent folder of the deleted one!!!
             self.o_ftp.cwd(o_file_entry.s_root)
             try:
                 self.o_ftp.rmd(o_file_entry.s_full_name)
+                b_deleted = True
             except ftplib.error_perm:
                 pass
 
-        elif o_file_entry.s_type == 'f':
-            print 'ERROR: You are trying to delete a file as a directory'
-        else:
-            print 'ERROR: You are trying to delete a non-existent file entry as a directory'
+        return b_deleted
 
     @staticmethod
     def _file_entry_from_nlst_line(s_root, s_nlst_line):
@@ -322,11 +322,11 @@ class Ftp:
                 o_file_entry = self._file_entry_from_nlst_line(s_root, s_line)
 
                  # Only actual files, 'f', and directories, 'd' are kept. Fake dirs like '..' are avoid.
-                if o_file_entry.s_type in ('f', 'd'):
+                if o_file_entry.is_file() or o_file_entry.is_dir():
                     lo_prev_elements.append(o_file_entry)
 
                     if b_recursive:
-                        if o_file_entry.s_type == 'd':
+                        if o_file_entry.is_dir():
                             self.list_file_entries(o_file_entry.s_full_path, lo_prev_elements, b_recursive=True)
 
             self.o_ftp.cwd(s_current_dir)
@@ -359,19 +359,68 @@ class Ftp:
             sys.exit()
 
     def delete(self, o_file_entry):
-        if o_file_entry.s_type == 'f':
-            self._delete_file(o_file_entry)
-        elif o_file_entry.s_type == 'd':
-            self._delete_dir(o_file_entry)
+
+        b_deleted = False
+
+        if o_file_entry.is_file == 'f':
+            b_deleted = self._delete_file(o_file_entry)
+        elif o_file_entry.is_dir == 'd':
+            b_deleted = self._delete_dir(o_file_entry)
+
+        return b_deleted
+
 
 #=======================================================================================================================
 #=======================================================================================================================
 class Dir:
     def __init__(self, s_root):
-        pass
+        if os.path.isdir(s_root):
+            self.b_connected = True
+            self.s_root = s_root
+        else:
+            self.b_connected = False
+            self.s_root = ''
+
+    @staticmethod
+    def _file_entry_from_path(s_path):
+
+        o_file_entry = fentry.FileEntry()
+
+        # Full path, name and extension
+        o_file_entry.s_full_path = s_path
+        o_file_entry.set_name(os.path.basename(s_path))
+        o_file_entry.s_root = os.path.split(s_path)[0]
+
+        # File or dir
+        if os.path.isdir(s_path):
+            o_file_entry.s_type = 'd'
+        elif os.path.isfile(s_path):
+            o_file_entry.s_type = 'f'
+
+        # Size
+        o_file_entry.set_size(files.get_size_of(s_path))
+
+        print o_file_entry
 
     def list_file_entries(self, s_root='', lo_prev_elements=[], b_recursive=False):
-        pass
+
+        if s_root == '':
+            s_root = self.s_root
+
+        for s_element in os.listdir(s_root):
+            s_full_path = os.path.join(s_root, s_element)
+
+            o_file_entry = self._file_entry_from_path(s_full_path)
+
+            if os.path.isfile(s_full_path):
+                #print 'File: %s' % s_full_path
+                pass
+
+            elif os.path.isdir(s_full_path) and b_recursive:
+                #print ' Dir: %s' % s_full_path
+                self.list_file_entries(s_full_path, lo_prev_elements, b_recursive)
+
+        return lo_prev_elements
 
     def download_file(self, o_file_entry, s_dest):
         pass

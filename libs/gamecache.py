@@ -55,7 +55,7 @@ class Database:
 
         o_file.close()
 
-    def get_title_by_id(self, s_id):
+    def get_title_by_id(self, s_id, s_sanitation='raw'):
 
         s_id = s_id.strip()
 

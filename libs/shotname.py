@@ -15,6 +15,7 @@ import sys
 s_DATE_FORMAT = '%Y.%m.%d'
 s_TIME_FORMAT = '%H.%M.%S'
 s_HISTORIC_FORMAT = '%s %s - %s %s - %s'
+# todo: move satination to game database
 s_SANITATION_PATTERN = r'[^\w\d \.\-_]'
 #=======================================================================================================================
 

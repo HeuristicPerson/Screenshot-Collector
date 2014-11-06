@@ -25,11 +25,37 @@ class FileEntry:
         self.s_root = ''                    # Full root path of the FtpFileEntry
         self.s_full_path = ''               # Full path of the FtpFileEntry
 
+    def is_dir(self):
+
+        b_is_dir = False
+
+        if self.s_type == 'd':
+            b_is_dir = True
+
+        return b_is_dir
+
+    def is_ext(self, s_ext):
+        if s_ext.lower() == self.s_ext.lower():
+            b_is_ext = True
+        else:
+            b_is_ext = False
+
+        return b_is_ext
+
+    def is_file(self):
+
+        b_is_file = False
+
+        if self.s_type == 'f':
+            b_is_file = True
+
+        return b_is_file
+
     def set_name(self, s_full_name):
         self.s_full_name = s_full_name
         if s_full_name.find('.') != -1:
-            self.s_name = s_full_name.partition('.')[0]
-            self.s_ext = s_full_name.partition('.')[2]
+            self.s_name = s_full_name.rpartition('.')[0]
+            self.s_ext = s_full_name.rpartition('.')[2]
         else:
             self.s_name = s_full_name
             self.s_ext = ''
@@ -39,6 +65,11 @@ class FileEntry:
         self.s_full_path = '/'.join((self.s_root, self.s_full_name))
 
     def set_size(self, i_size):
+        try:
+            i_size = int(i_size)
+        except TypeError:
+            i_size = 0
+
         self.i_size = i_size
         self.s_size = files.human_size(self.i_size)
 
