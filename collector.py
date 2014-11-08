@@ -19,18 +19,18 @@ from libs import shotsource
 lo_shot_sources = []
 
 # Xbox 360 FTP configuration
-#o_shot_source_xbox360 = shotsource.ShotSource('Xbox 360')
-#
-#o_shot_source_xbox360.set_source('ftp', '192.168.0.106', '/Hdd1/Freestyle Dash/Plugins/UserData')
-#o_shot_source_xbox360.set_user_pass('xbox', 'xbox')                     # User and pass for FTP or SAMBA
-#
-#o_shot_source_xbox360.set_db_and_scheme('xbox360', 'xbox360')           # Name of the DB and source screenshot scheme
-#o_shot_source_xbox360.set_get_exts('bmp')                               # File extensions to download_file from source
-#o_shot_source_xbox360.set_del_exts('bmp', 'meta')                       # File extensions to remove from source
-#o_shot_source_xbox360.set_recursive()                                   # Searching for images recursively
+o_shot_source_xbox360 = shotsource.ShotSource('Xbox 360')
+
+o_shot_source_xbox360.set_source('ftp', '192.168.0.106', '/Hdd1/Freestyle Dash/Plugins/UserData')
+o_shot_source_xbox360.set_user_pass('xbox', 'xbox')                     # User and pass for FTP or SAMBA
+
+o_shot_source_xbox360.set_db_and_scheme('xbox360', 'freestyledash')     # Name of the DB and source screenshot scheme
+o_shot_source_xbox360.set_get_exts('bmp')                               # File extensions to download_file from source
+o_shot_source_xbox360.set_del_exts('meta')                              # File extensions to remove from source
+o_shot_source_xbox360.set_recursive()                                   # Searching for images recursively
 #o_shot_source_xbox360.set_clean_dirs()                                  # Image folders are deleted (if empty)
-#
-#lo_shot_sources.append(o_shot_source_xbox360)
+
+lo_shot_sources.append(o_shot_source_xbox360)
 
 # zsnes dir configuration
 o_shot_source_snes = shotsource.ShotSource('Super Nintendo')
@@ -41,7 +41,7 @@ o_shot_source_snes.set_db_and_scheme('snes', 'zsnes')                   # Name o
 o_shot_source_snes.set_get_exts('bmp')                                  # File extensions to download_file from source
 o_shot_source_snes.set_del_exts()                                       # File extensions to remove from source
 
-lo_shot_sources.append(o_shot_source_snes)
+#lo_shot_sources.append(o_shot_source_snes)
 
 # Helper function to avoid multiple instances of the script
 #=======================================================================================================================
@@ -72,4 +72,4 @@ if not is_file_locked('.lock'):
 
 for o_shot_source in lo_shot_sources:
     o_shot_source.download_files(cons.s_TEMP_DIR)
-    #o_shot_source.archive_files(cons.s_TEMP_DIR, cons.s_HIST_DIR)
+    o_shot_source.archive_files(cons.s_TEMP_DIR, cons.s_HIST_DIR)

@@ -18,7 +18,7 @@ class FileEntry:
         self.s_full_name = ''               # Full file name i.e. 'picture.jpg'
         self.s_name = ''                    # Short file name i.e. 'picture'
         self.s_ext = ''                     # File extension i.e. 'jpg'
-        self.s_type = 'u'                   # 'f' for file, 'd' for directory, 'u' for non-existent or unknown element
+        self._s_type = 'u'                  # 'f' for file, 'd' for directory, 'u' for non-existent or unknown element
         self.s_permission = ''              # File permission string i.e. 'rwxrwxrwx'
 
         self.s_group = ''                   # File owner group
@@ -35,7 +35,7 @@ class FileEntry:
         #s_output += '     Source: %s\n' % self.o_source._s_host
         s_output += '  Full Path: %s\n' % self.s_full_path
         s_output += '       Root: %s\n' % self.s_root
-        s_output += '       Type: %s\n' % self.s_type
+        s_output += '       Type: %s\n' % self._s_type
         s_output += '  Full Name: %s\n' % self.s_full_name
         s_output += '       Name: %s\n' % self.s_name
         s_output += '  Extension: %s\n' % self.s_ext
@@ -63,9 +63,9 @@ class FileEntry:
 
         # Identifying file or dir
         if os.path.isfile(s_full_path):
-            self.s_type = 'f'
+            self._s_type = 'f'
         elif os.path.isdir(s_full_path):
-            self.s_type = 'd'
+            self._s_type = 'd'
 
         # Building date
         if self.is_file() or self.is_dir():
@@ -75,14 +75,14 @@ class FileEntry:
         if self.f_time is not None:
             o_date = datetime.datetime.fromtimestamp(self.f_time)
             # One decimal position should be enough for the screenshot timestamp
-            s_date = o_date.strftime('%Y.%m.%d %H.%M.%S.%f')[0:-5]
+            s_date = o_date.strftime('%Y-%m-%d %H-%M-%S.%f')[0:-5]
             return s_date
 
     def is_dir(self):
 
         b_is_dir = False
 
-        if self.s_type == 'd':
+        if self._s_type == 'd':
             b_is_dir = True
 
         return b_is_dir
@@ -99,7 +99,7 @@ class FileEntry:
 
         b_is_file = False
 
-        if self.s_type == 'f':
+        if self._s_type == 'f':
             b_is_file = True
 
         return b_is_file

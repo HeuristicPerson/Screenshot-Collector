@@ -1,12 +1,12 @@
 import os
 import sys
 
+import fentry
 import xcrapper
 
 
 class Database:
-    def __init__(self, s_name, s_cache_file):
-        self.s_name = s_name
+    def __init__(self, s_cache_file):
         self._ds_entries = {}
         self._s_header = ''
 
@@ -16,6 +16,13 @@ class Database:
 
         self._s_cache_file = s_cache_file
         self._load_data()
+
+        # Database name from cache file using fentry library. Probably a bit overdone...
+        o_cache_file = fentry.FileEntry()
+        o_cache_file.from_local_path(s_cache_file)
+
+        self._s_name = o_cache_file.s_name
+
 
     def _load_data(self):
         """
@@ -42,7 +49,7 @@ class Database:
 
             # Parsing the content
             else:
-                if len(s_line) != 0 and s_line[0] != '#':
+                if len(s_line_clean) != 0 and s_line[0] != '#':
                     s_id = s_line_clean.partition('\t')[0]
                     s_title = s_line_clean.partition('\t')[2]
 
@@ -82,7 +89,7 @@ class Database:
             s_title = self._ds_entries[s_id]
 
         except KeyError:
-            s_title = xcrapper.get_title_by_id(self.s_name, s_id)
+            s_title = xcrapper.get_title_by_id(self._s_name, s_id)
 
             self._ds_entries[s_id] = s_title
             self._write_data()
@@ -90,7 +97,15 @@ class Database:
         return s_title
 
     def get_id_by_title(self, s_title):
-        pass
+
+        s_id = '________'
+
+        for s_db_id, s_db_title in self._ds_entries.iteritems():
+            if s_db_title == s_title:
+                s_id = s_db_id
+                break
+
+        return s_id
 
     def get_items(self):
         return len(self._ds_entries)

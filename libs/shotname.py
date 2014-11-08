@@ -7,38 +7,59 @@ for example:
 """
 
 import datetime
+import os
 import re
 import sys
-
+import cons
+import gamecache
 
 #[ CONSTANTS ]==========================================================================================================
 s_DATE_FORMAT = '%Y.%m.%d'
 s_TIME_FORMAT = '%H.%M.%S'
 s_HISTORIC_FORMAT = '%s %s - %s %s - %s'
-# todo: move satination to game database
+# todo: move sanitation to game database
 s_SANITATION_PATTERN = r'[^\w\d \.\-_]'  # To avoid problems with the archive file name we clean "weird" characters
 #=======================================================================================================================
 
 
-def raw_to_historic(s_input_scheme, o_games_db, s_raw_name):
-    if s_input_scheme == 'xbox360':
-        s_output = _xbox360_to_historic(s_raw_name, o_games_db)
+def raw_to_historic(o_games_db, s_src_name):
 
-    elif s_input_scheme == 'zsnes':
-        s_output = _zsnes_to_historic(s_raw_name, o_games_db)
+    s_timestamp = s_src_name.split(' - ')[0]
+
+    s_database = s_src_name.split(' - ')[1].split(' ')[0]
+    s_scheme = s_src_name.split(' - ')[1].split(' ')[1]
+    s_raw_name = ' - '.join(s_src_name.split(' - ')[2:])
+
+    #print 'SRC: %s' % s_src_name
+    #print ' DB: %s' % s_database
+    #print 'SCH: %s' % s_scheme
+    #print 'RAW: %s' % s_raw_name
+
+    if s_scheme == 'freestyledash':
+        ds_parsed_data = _xbox360_to_historic(s_raw_name, o_games_db)
+
+    elif s_scheme == 'zsnes':
+        ds_parsed_data = _zsnes_to_historic(s_raw_name, o_games_db)
 
     else:
-        print 'ERROR: Unknown input scheme "%s"' % s_input_scheme
+        print 'ERROR: Unknown input scheme "%s"' % s_scheme
         sys.exit()
 
-    # Title sanitation
-    s_output = re.sub(s_SANITATION_PATTERN, '', s_output, flags=re.I)
+    s_historic_output = '%s - %s %s - %s' % (s_timestamp, s_database, ds_parsed_data['s_id'], ds_parsed_data['s_name'])
 
-    return s_output
+#    # Title sanitation
+#    s_output = re.sub(s_SANITATION_PATTERN, '', s_output, flags=re.I)
+#
+    return s_historic_output
 
-def _zsnes_to_historic(s_orig_name, o_games_db):
-    print s_orig_name
-    pass
+
+def _zsnes_to_historic(s_raw_name, o_games_db):
+    s_rom_name = s_raw_name.rpartition('_')[0]
+
+    s_id = o_games_db.get_id_by_title(s_rom_name)
+
+    return {'s_name': s_rom_name, 's_id': s_id, 'f_timestamp': 0}
+
 
 def _xbox360_to_historic(s_orig_name, o_games_db):
     """
@@ -70,5 +91,5 @@ def _xbox360_to_historic(s_orig_name, o_games_db):
     # Real name obtaining
     s_name = o_games_db.get_title_by_id(s_id)
 
-    return s_HISTORIC_FORMAT % (s_date, s_time, o_games_db.s_name, s_id, s_name)
+    return {'s_name': s_name, 's_id': s_id, 'f_timestamp': 0}
 

@@ -1,4 +1,6 @@
-58410964	Alien Breed Episode 1
+# Xbox 360 dat obtained from xbox.com
+#=======================================================================================================================
+58410b66	Bastion
 5841086a	Boom Boom Rocket
 584108cE	Braid
 584108b7	Castle Crashers
@@ -8,6 +10,7 @@
 45410915	Fight Night Champion
 4d5309c9	Forza Horizon
 00000000	Freestyle Dash
+58411446	Guacamelee! STCE
 415607e6	Modern Warfare
 555308c3	Rayman Legends
 454108e6	Skate 3

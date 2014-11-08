@@ -1,3 +1,4 @@
+import datetime
 import ftplib
 import os
 import shutil
@@ -65,20 +66,21 @@ class ShotSource():
                 pass
 
         # Since the list of elements could be used to delete everything, it's needed that it's reversed to list first
-        # the childs and then the parents. This way you will delete first the childs and then the parents. The opposite
-        # order would lead you to a situation where you would be trying to delete a folder while it stills had the
-        # content inside.
+        # the children and then the parents. This way you will delete first the children and then the parents. The
+        # opposite order would lead you to a situation where you would be trying to delete a folder while it stills had
+        # the content inside.
         return reversed(lo_file_entries)
 
     def _connect(self):
         if self._s_type == 'dir':
-            # todo: add support for folders
             self.o_source = Dir(self._s_root)
             self.b_connected = True
 
         elif self._s_type == 'ftp':
             self.o_source = Ftp(self._s_host, self._s_user, self._s_pass, 5)
-            self.b_connected = True
+            self.b_connected = self.o_source.b_connected
+            if not self.b_connected:
+                print 'FTP: Not connected'
 
         elif self._s_type == 'samba':
             # todo: add support for samba remote folders
@@ -103,9 +105,8 @@ class ShotSource():
         :return: Nothing
         """
 
-        print 'Gathering images from source: %s (%s, %s)' % (self.s_name, self._s_type, self._s_host)
-        print 'Downloading images from: %s (%s)' % (self.s_name, self._s_host)
-        print '------------------------------------------------------'
+        print 'Getting images from source: %s (%s, %s)' % (self.s_name, self._s_type, self._s_host)
+        print '-' * 78
 
         self._connect()
 
@@ -117,13 +118,15 @@ class ShotSource():
         o_db_fentry.from_local_path(self._s_dat_file)
         s_db_name = o_db_fentry.s_name
 
-        i_files_downloaded = 0
-        i_bytes_downloaded = 0
-        i_files_deleted = 0
-        i_bytes_deleted = 0
-        i_dirs_deleted = 0
+        i_files_got = 0
+        i_bytes_got = 0
+        i_files_del = 0
+        i_bytes_del = 0
+        i_dirs_del = 0
 
         for o_remote_fentry in lo_remote_fentries:
+
+            #print o_remote_fentry
 
             # Downloading of files with selected extensions
             if o_remote_fentry.is_file() and o_remote_fentry.s_ext in self._ls_get_exts:
@@ -137,26 +140,27 @@ class ShotSource():
 
                 self.o_source.download_file(o_remote_fentry, s_dst_dir, s_dst_name)
 
-                i_files_downloaded += 1
-                i_bytes_downloaded += o_remote_fentry.i_size
-                print 'Downloaded: %s  %s' % (o_remote_fentry.s_full_name, o_remote_fentry.s_size)
+                i_files_got += 1
+                i_bytes_got += o_remote_fentry.i_size
+                print 'Got: %s  %s' % (o_remote_fentry.s_full_name, o_remote_fentry.s_size)
 
             # Deletion of files with selected extensions
             if o_remote_fentry.is_file() and o_remote_fentry.s_ext.lower() in self._ls_del_exts:
-                print '   Deleted: %s  %s' % (o_remote_fentry.s_full_name, o_remote_fentry.s_size)
+                print 'Del: %s  %s' % (o_remote_fentry.s_full_name, o_remote_fentry.s_size)
                 self.o_source.delete(o_remote_fentry)
-                i_files_deleted += 1
-                i_bytes_deleted += o_remote_fentry.i_size
+                i_files_del += 1
+                i_bytes_del += o_remote_fentry.i_size
 
             # Removal of empty folders
             if o_remote_fentry.is_dir() and not self._b_dir_keep:
                 if self.o_source.delete(o_remote_fentry):
-                    i_dirs_deleted += 1
+                    i_dirs_del += 1
 
-        print '            Files downloaded: %i (%s)' % (i_files_downloaded, files.human_size(i_bytes_downloaded))
-        print '               Files deleted: %i (%s)' % (i_files_deleted, files.human_size(i_bytes_deleted))
-        print '                Dirs deleted: %i' % i_dirs_deleted
-        print
+        s_report = 'Got: %i files (%s)  Del: %i files (%s) and %i dirs\n' % (i_files_got, files.human_size(i_bytes_got),
+                                                                             i_files_del, files.human_size(i_bytes_del),
+                                                                             i_dirs_del)
+
+        print s_report.rjust(78)
 
         self._disconnect()
 
@@ -171,10 +175,11 @@ class ShotSource():
         :return: Nothing
         """
 
-        print 'Archiving images from: %s (%s)' % (self.s_name, self._s_host)
-        print '------------------------------------------------------'
+        print 'Archiving images from: %s (%s, %s)' % (self.s_name, self._s_type, self._s_host)
+        print '-' * 78
 
-        o_games_db = gamecache.Database(self.s_name, self._s_dat_file)
+        s_db_path = os.path.join(cons.s_DAT_DIR, '%s.txt' % self._s_dat_file)
+        o_games_db = gamecache.Database(s_db_path)
 
         i_files_processed = 0
         i_orig_size = 0
@@ -183,7 +188,7 @@ class ShotSource():
         for s_src_file in files.get_files_in(s_src_dir):
             s_orig_name, s_orig_ext = files.get_name_and_extension(s_src_file)
 
-            s_arch_name = shotname.raw_to_historic(self._s_src_scheme, o_games_db, s_orig_name)
+            s_arch_name = shotname.raw_to_historic(o_games_db, s_orig_name)
 
             s_dst_file = '%s.%s' % (s_arch_name, self.s_hist_ext)
 
@@ -193,8 +198,8 @@ class ShotSource():
             s_cmd = 'convert "%s" "%s" 2>/dev/null' % (s_src_img, s_dst_img)
             os.system(s_cmd)
 
-            print '      From: %s  %s' % (s_src_file, files.human_size(files.get_size_of(s_src_img)))
-            print '        To: %s  %s' % (s_dst_file, files.human_size(files.get_size_of(s_dst_img)))
+            print 'Src: %s  %s' % (s_src_file, files.human_size(files.get_size_of(s_src_img)))
+            print 'Dsc: %s  %s' % (s_dst_file, files.human_size(files.get_size_of(s_dst_img)))
 
             i_files_processed += 1
             i_orig_size += files.get_size_of(s_src_img)
@@ -215,9 +220,7 @@ class ShotSource():
         self._b_dir_keep = False
 
     def set_db_and_scheme(self, s_db, s_scheme):
-        s_full_db_path = os.path.join(cons.s_DAT_DIR, '%s.txt' % s_db)
-        self._s_dat_file = s_full_db_path
-
+        self._s_dat_file = s_db
         self._s_src_scheme = s_scheme
 
     def set_del_exts(self, *s_exts):
@@ -311,6 +314,8 @@ class Ftp:
 
             self.o_ftp.cwd(s_original_path)
 
+            return True
+
     def _delete_dir(self, o_file_entry):
 
         b_deleted = False
@@ -344,9 +349,9 @@ class Ftp:
             s_chunk_1 = s_nlst_line.partition('   ')[0]
 
             if s_chunk_1[0] == 'd':
-                o_file_entry.s_type = 'd'
+                o_file_entry._s_type = 'd'
             else:
-                o_file_entry.s_type = 'f'
+                o_file_entry._s_type = 'f'
 
             o_file_entry.s_permission = s_chunk_1[1:]
 
@@ -356,14 +361,14 @@ class Ftp:
             o_file_entry.s_user = s_chunk_2.partition('  ')[0]
             o_file_entry.s_group = s_chunk_2.partition('  ')[2]
 
-            # Size, Date and file name
+            # Size and Full path (full path => root, name, ext)
             s_chunk_3 = s_nlst_line.partition('    ')[2]
 
             o_file_entry.set_size(int(s_chunk_3.partition(' ')[0]))
-            o_file_entry.set_name(s_chunk_3.split(' ')[4])
 
-            # Root and Full Path
-            o_file_entry.set_root(s_root)
+            s_name = s_chunk_3.split(' ')[4]
+            s_full_path = os.path.join(s_root, s_name)
+            o_file_entry.set_full_path(s_full_path)
 
         return o_file_entry
 
@@ -386,7 +391,13 @@ class Ftp:
 
                 o_file_entry = self._file_entry_from_nlst_line(s_root, s_line)
 
-                 # Only actual files, 'f', and directories, 'd' are kept. Fake dirs like '..' are avoid.
+                # Unfortunately, FTP nlst line doesn't provide full date information. So it's needed to send a FTP MDTM
+                # command to get that information and then parse+add it to the o_file_entry object.
+                if o_file_entry.is_file():
+                    s_modified_time = self.o_ftp.sendcmd('MDTM %s' % o_file_entry.s_full_name).partition(' ')[2]
+                    o_modified_time = datetime.datetime.strptime(s_modified_time, '%Y%m%d%H%M%S')
+                    o_file_entry.f_time = (o_modified_time - datetime.datetime(1970, 1, 1)).total_seconds()
+
                 if o_file_entry.is_file() or o_file_entry.is_dir():
                     lo_prev_elements.append(o_file_entry)
 
@@ -398,12 +409,15 @@ class Ftp:
 
         return lo_prev_elements
 
-    def download_file(self, o_file_entry, s_dest):
-        if o_file_entry.s_type == 'f':
+    def download_file(self, o_file_entry, s_dst_dir, s_dst_file=''):
+        if o_file_entry.is_file():
             s_original_path = self.o_ftp.pwd()
             self.o_ftp.cwd(o_file_entry.s_root)
 
-            s_dst_path = os.path.join(s_dest, o_file_entry.s_full_name)
+            if s_dst_file == '':
+                s_dst_path = os.path.join(s_dst_dir, o_file_entry.s_full_name)
+            else:
+                s_dst_path = os.path.join(s_dst_dir, s_dst_file)
 
             o_download_file = open(s_dst_path, 'wb')
 
@@ -415,7 +429,7 @@ class Ftp:
 
             self.o_ftp.cwd(s_original_path)
 
-        elif o_file_entry.s_type == 'd':
+        elif o_file_entry.is_dir():
             print 'ERROR: You are trying to download_file a directory as a file'
             sys.exit()
 
@@ -427,9 +441,9 @@ class Ftp:
 
         b_deleted = False
 
-        if o_file_entry.is_file == 'f':
+        if o_file_entry.is_file():
             b_deleted = self._delete_file(o_file_entry)
-        elif o_file_entry.is_dir == 'd':
+        elif o_file_entry.is_dir():
             b_deleted = self._delete_dir(o_file_entry)
 
         return b_deleted
@@ -458,9 +472,9 @@ class Dir:
 
         # File or dir
         if os.path.isdir(s_path):
-            o_file_entry.s_type = 'd'
+            o_file_entry._s_type = 'd'
         elif os.path.isfile(s_path):
-            o_file_entry.s_type = 'f'
+            o_file_entry._s_type = 'f'
 
         # Size
         o_file_entry.set_size(files.get_size_of(s_path))
