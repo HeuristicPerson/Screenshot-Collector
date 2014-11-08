@@ -1,7 +1,9 @@
 import ftplib
 import os
+import shutil
 import sys
 
+import cons
 import fentry
 import files
 import gamecache
@@ -10,46 +12,37 @@ import shotname
 
 class ShotSource():
     """
-    Class to archive information about a source (ftp, folder, samba folder... maybe more in the future) where screenshots
+    Class to archive_files information about a source (ftp, folder, samba folder... maybe more in the future) where screenshots
     can be found.
     """
 
-    def __init__(self):
-        self.s_name = ''            # Name of the source (this name is going to be used to check the id->title database)
-        self.s_type = ''            # Type of source ('folder', 'ftp', 'samba' by now)
-        self.s_host = ''            # Host. i.e. '192.168.0.100'
-        self.s_user = ''            # The name of the user of the FTP. i.e. 'john'
-        self.s_pass = ''            # The password for the user. i.e. '123456'
-        self.s_root = ''            # Root folder of the FTP where screenshots are located. i.e. '/data/screenshots/'
-        self.i_timeout = 5          # Timeout
-        self.ls_get_exts = ('')     # File extensions to download_file (case insensitive). i.e. ('jpg', 'png')
-        self.ls_del_exts = ('')     # File extensions to delete (case insensitive). i.e. ('bak', 'txt')
-        self.b_recursive = True     # Should search in sub-folders inside the root folder?
-        self.b_dir_keep = True      # Should the empty folders be kept in the FTP?
-        self.o_source = None        # The real source behind the MetaObject
-        self.b_connected = False    # Is the source connected?
-        self.s_hist_ext = ''        # Extension for the archived screenshots
+    def __init__(self, s_name):
+        self.s_name = s_name               # Name of the source
 
-        self.s_dat_file = ''        # Name of the dat file
+        self._s_dat_file = ''              # Name of the dat file
+        self._s_src_scheme = ''            # Source naming scheme (emulators have different screenshot naming schemes)
 
-        # Forcing the extensions to be lowercase so we can compare later just lowercase extensions making the mechanism
-        # to be case insensitive.
-        ls_new_get_exts = []
-        for s_get_ext in self.ls_get_exts:
-            s_get_ext = s_get_ext.lower()
-            ls_new_get_exts.append(s_get_ext)
+        self._s_type = ''                  # Type of source ('dir', 'ftp', 'smb' by now)
+        self._s_host = ''                  # Host. i.e. '192.168.0.100'
+        self._s_root = ''                  # Root folder of the FTP where screenshots are located. i.e. '/data/'
 
-        self.ls_get_exts = ls_new_get_exts
+        self._s_user = ''                  # The name of the user of the FTP. i.e. 'john'
+        self._s_pass = ''                  # The password for the user. i.e. '123456'
 
-        ls_new_del_exts = []
-        for s_del_ext in self.ls_del_exts:
-            s_del_ext = s_del_ext.lower()
-            ls_new_del_exts.append(s_del_ext)
+        self._i_timeout = 5                # Timeout
 
-        self.ls_del_exts = ls_new_del_exts
+        self._ls_get_exts = ('')           # File exts to download_file (case insensitive). i.e. ('jpg', 'png')
+        self._ls_del_exts = ('')           # File exts to delete (case insensitive). i.e. ('bak', 'txt')
+
+        self._b_recursive = True           # Should search in sub-folders inside the root folder?
+        self._b_dir_keep = True            # Should the empty folders be kept in the FTP?
+        self.o_source = None               # The real source behind the MetaObject
+        self.b_connected = False           # Is the source connected?
+
+        self.s_hist_ext = cons.s_HIST_EXT  # Extension for the archived screenshots
 
     def __str__(self):
-        s_output = '%s, %s source at %s' % (self.s_name, self.s_type, self.s_host)
+        s_output = '%s, %s source at %s' % (self.s_name, self._s_type, self._s_host)
         return s_output
 
     def _list_file_entries(self):
@@ -62,13 +55,13 @@ class ShotSource():
 
         if self.b_connected:
 
-            if self.s_type == 'dir':
-                lo_file_entries = self.o_source.list_file_entries(self.s_root, b_recursive=self.b_recursive)
+            if self._s_type == 'dir':
+                lo_file_entries = self.o_source.list_file_entries(self._s_root, b_recursive=self._b_recursive)
 
-            elif self.s_type == 'ftp':
-                lo_file_entries = self.o_source.list_file_entries(self.s_root, b_recursive=self.b_recursive)
+            elif self._s_type == 'ftp':
+                lo_file_entries = self.o_source.list_file_entries(self._s_root, b_recursive=self._b_recursive)
 
-            elif self.s_type == 'samba':
+            elif self._s_type == 'samba':
                 pass
 
         # Since the list of elements could be used to delete everything, it's needed that it's reversed to list first
@@ -78,16 +71,16 @@ class ShotSource():
         return reversed(lo_file_entries)
 
     def _connect(self):
-        if self.s_type == 'dir':
+        if self._s_type == 'dir':
             # todo: add support for folders
-            self.o_source = Dir(self.s_root)
+            self.o_source = Dir(self._s_root)
             self.b_connected = True
 
-        elif self.s_type == 'ftp':
-            self.o_source = Ftp(self.s_host, self.s_user, self.s_pass, 5)
+        elif self._s_type == 'ftp':
+            self.o_source = Ftp(self._s_host, self._s_user, self._s_pass, 5)
             self.b_connected = True
 
-        elif self.s_type == 'samba':
+        elif self._s_type == 'samba':
             # todo: add support for samba remote folders
             pass
 
@@ -101,21 +94,28 @@ class ShotSource():
         self.o_source = None
         self.b_connected = False
 
-    def download_files(self, s_dest):
+    def download_files(self, s_dst_dir):
         """
         Method to download_file all the screenshots from a source.
 
-        :param s_dest: Destination for the images. i.e. '/home/john/temp-images'
+        :param s_dst_dir: Destination for the images. i.e. '/home/john/temp-images'
 
         :return: Nothing
         """
 
-        print 'Downloading images from: %s (%s)' % (self.s_name, self.s_host)
+        print 'Gathering images from source: %s (%s, %s)' % (self.s_name, self._s_type, self._s_host)
+        print 'Downloading images from: %s (%s)' % (self.s_name, self._s_host)
         print '------------------------------------------------------'
 
         self._connect()
 
-        lo_file_entries = self._list_file_entries()
+        lo_remote_fentries = self._list_file_entries()
+
+        # Workaround to get the database name using a file entry object instead of directly parse the database file
+        # path.
+        o_db_fentry = fentry.FileEntry()
+        o_db_fentry.from_local_path(self._s_dat_file)
+        s_db_name = o_db_fentry.s_name
 
         i_files_downloaded = 0
         i_bytes_downloaded = 0
@@ -123,25 +123,34 @@ class ShotSource():
         i_bytes_deleted = 0
         i_dirs_deleted = 0
 
-        for o_file_entry in lo_file_entries:
+        for o_remote_fentry in lo_remote_fentries:
 
             # Downloading of files with selected extensions
-            if o_file_entry.if_file() and o_file_entry.s_ext in self.ls_get_exts:
-                print 'Downloaded: %s  %s' % (o_file_entry.s_full_name, o_file_entry.s_size)
-                self.o_source.download_file(o_file_entry, s_dest)
+            if o_remote_fentry.is_file() and o_remote_fentry.s_ext in self._ls_get_exts:
+
+                # Adding extra information (timestamp, database name, and source naming scheme) seems to be a good idea
+                # to be safe. i.e. something fails and you end with a lot of mixed files from many different sources in
+                # your temp folder
+                s_dst_name = '%s - %s %s - %s' % (o_remote_fentry.get_human_date(),
+                                                  s_db_name, self._s_src_scheme,
+                                                  o_remote_fentry.s_full_name)
+
+                self.o_source.download_file(o_remote_fentry, s_dst_dir, s_dst_name)
+
                 i_files_downloaded += 1
-                i_bytes_downloaded += o_file_entry.i_size
+                i_bytes_downloaded += o_remote_fentry.i_size
+                print 'Downloaded: %s  %s' % (o_remote_fentry.s_full_name, o_remote_fentry.s_size)
 
             # Deletion of files with selected extensions
-            if o_file_entry.is_file() and o_file_entry.s_ext.lower() in self.ls_del_exts:
-                print '   Deleted: %s  %s' % (o_file_entry.s_full_name, o_file_entry.s_size)
-                self.o_source.delete(o_file_entry)
+            if o_remote_fentry.is_file() and o_remote_fentry.s_ext.lower() in self._ls_del_exts:
+                print '   Deleted: %s  %s' % (o_remote_fentry.s_full_name, o_remote_fentry.s_size)
+                self.o_source.delete(o_remote_fentry)
                 i_files_deleted += 1
-                i_bytes_deleted += o_file_entry.i_size
+                i_bytes_deleted += o_remote_fentry.i_size
 
             # Removal of empty folders
-            if o_file_entry.is_dir() and not self.b_dir_keep:
-                if self.o_source.delete(o_file_entry):
+            if o_remote_fentry.is_dir() and not self._b_dir_keep:
+                if self.o_source.delete(o_remote_fentry):
                     i_dirs_deleted += 1
 
         print '            Files downloaded: %i (%s)' % (i_files_downloaded, files.human_size(i_bytes_downloaded))
@@ -151,18 +160,21 @@ class ShotSource():
 
         self._disconnect()
 
-    def archive(self, s_src_dir, s_dst_dir):
+    def archive_files(self, s_src_dir, s_dst_dir):
         """
-        Method to rename, convert and archive the images found in s_src_dir, to s_dst_dir
+        Method to rename, convert and archive_files the images found in s_src_dir, to s_dst_dir
 
         :param s_src_dir: Source directory. i.e. '/home/john/temp'
-        :param s_dst_dir: Destination directory. i.e. '/home/john/screenshot-archive'
-        :return:
+
+        :param s_dst_dir: Destination directory. i.e. '/home/john/screenshot-archive_files'
+
+        :return: Nothing
         """
-        print 'Archiving images from: %s (%s)' % (self.s_name, self.s_host)
+
+        print 'Archiving images from: %s (%s)' % (self.s_name, self._s_host)
         print '------------------------------------------------------'
 
-        o_games_db = gamecache.Database(self.s_name, self.s_dat_file)
+        o_games_db = gamecache.Database(self.s_name, self._s_dat_file)
 
         i_files_processed = 0
         i_orig_size = 0
@@ -171,7 +183,9 @@ class ShotSource():
         for s_src_file in files.get_files_in(s_src_dir):
             s_orig_name, s_orig_ext = files.get_name_and_extension(s_src_file)
 
-            s_dst_file = '%s.%s' % (shotname.raw_to_historic(s_orig_name, o_games_db), self.s_hist_ext)
+            s_arch_name = shotname.raw_to_historic(self._s_src_scheme, o_games_db, s_orig_name)
+
+            s_dst_file = '%s.%s' % (s_arch_name, self.s_hist_ext)
 
             s_src_img = os.path.join(s_src_dir, s_src_file)
             s_dst_img = os.path.join(s_dst_dir, s_dst_file)
@@ -197,18 +211,69 @@ class ShotSource():
             print '              Archived size: %s (%0.1f%%)' % (files.human_size(i_mod_size), 0.0)
         print
 
-    def find_dat_file(self, s_folder):
+    def set_clean_dirs(self):
+        self._b_dir_keep = False
+
+    def set_db_and_scheme(self, s_db, s_scheme):
+        s_full_db_path = os.path.join(cons.s_DAT_DIR, '%s.txt' % s_db)
+        self._s_dat_file = s_full_db_path
+
+        self._s_src_scheme = s_scheme
+
+    def set_del_exts(self, *s_exts):
+
+        ls_del_exts = []
+
+        for s_ext in s_exts:
+            s_ext = s_ext.lower()
+            ls_del_exts.append(s_ext)
+
+        self._ls_del_exts = tuple(ls_del_exts)
+
+    def set_get_exts(self, *s_exts):
         """
-        Method to find the dat file in one folder.
+        Method to define the extensions to download/get from the source.
 
-        :param s_folder:
-
-        :return:
+        :param: s_exts: List of extensions to download. i.e. 'bmp', 'gif'.
         """
 
-        s_dat_file = os.path.join(s_folder, '%s.txt' % self.s_name)
-        if os.path.isfile(s_dat_file):
-            self.s_dat_file = s_dat_file
+        ls_get_exts = []
+
+        for s_ext in s_exts:
+            s_ext = s_ext.lower()
+            ls_get_exts.append(s_ext)
+
+        self._ls_get_exts = tuple(ls_get_exts)
+
+    def set_recursive(self):
+        self._b_recursive = True
+
+    def set_source(self, s_type, s_host, s_root):
+        """
+        Method to define the source itself.
+
+        :param s_type: Type of source. 'dir' for directories, 'ftp' for FTP, and 'smb' for Samba.
+
+        :param s_host: Address of the source. i.e. '192.168.0.100'
+
+        :param s_root: Root folder of the source. i.e. '/emulator-data/screenshots/'
+        """
+
+        # Type of source
+        if s_type in ('dir', 'ftp', 'smb'):
+            self._s_type = s_type
+        else:
+            print 'ERROR: Unknown source type "%s"' % s_type
+
+        # Host address
+        self._s_host = s_host
+
+        # Root
+        self._s_root = s_root
+
+    def set_user_pass(self, s_user, s_pass):
+        self._s_user = s_user
+        self._s_pass = s_pass
 
 
 #=======================================================================================================================
@@ -233,7 +298,7 @@ class Ftp:
         """
         Method to delete a file from the ftp server.
 
-        :param o_file_entry: I must be a real file entry (self.s_type = 'f'). Otherwise an error is printed.
+        :param o_file_entry: I must be a real file entry (self._s_type = 'f'). Otherwise an error is printed.
 
         :return: Nothing.
         """
@@ -400,7 +465,13 @@ class Dir:
         # Size
         o_file_entry.set_size(files.get_size_of(s_path))
 
-        print o_file_entry
+        # Date
+        o_file_entry.f_time = os.path.getmtime(s_path)
+
+        # todo: obtain user/group, permission and date from files
+        #print o_file_entry
+
+        return o_file_entry
 
     def list_file_entries(self, s_root='', lo_prev_elements=[], b_recursive=False):
 
@@ -412,18 +483,22 @@ class Dir:
 
             o_file_entry = self._file_entry_from_path(s_full_path)
 
-            if os.path.isfile(s_full_path):
-                #print 'File: %s' % s_full_path
-                pass
+            lo_prev_elements.append(o_file_entry)
 
-            elif os.path.isdir(s_full_path) and b_recursive:
-                #print ' Dir: %s' % s_full_path
+            if o_file_entry.is_dir() and b_recursive:
                 self.list_file_entries(s_full_path, lo_prev_elements, b_recursive)
 
         return lo_prev_elements
 
-    def download_file(self, o_file_entry, s_dest):
-        pass
+    @staticmethod
+    def download_file(o_file_entry, s_dst_dir, s_dst_name=''):
+        s_src_file = o_file_entry.s_full_path
+        if s_dst_name == '':
+            s_dst_file = os.path.join(s_dst_dir, o_file_entry.s_full_name)
+        else:
+            s_dst_file = os.path.join(s_dst_dir, s_dst_name)
+
+        shutil.copy(s_src_file, s_dst_file)
 
     def delete(self, o_file_entry):
         pass

@@ -17,7 +17,7 @@ s_USER = 'xbox'
 s_PASS = 'xbox'
 s_ROOT = '/Hdd1/Freestyle Dash/Plugins/UserData/'
 
-# Historical archive configuration
+# Historical archive_files configuration
 #---------------------------------------------------------
 s_STORE_EXT = 'png'
 

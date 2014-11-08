@@ -16,15 +16,19 @@ s_DATE_FORMAT = '%Y.%m.%d'
 s_TIME_FORMAT = '%H.%M.%S'
 s_HISTORIC_FORMAT = '%s %s - %s %s - %s'
 # todo: move satination to game database
-s_SANITATION_PATTERN = r'[^\w\d \.\-_]'
+s_SANITATION_PATTERN = r'[^\w\d \.\-_]'  # To avoid problems with the archive file name we clean "weird" characters
 #=======================================================================================================================
 
 
-def raw_to_historic(s_orig_name, o_games_db):
-    if o_games_db.s_name == 'xbox360':
-        s_output = _xbox360_to_historic(s_orig_name, o_games_db)
+def raw_to_historic(s_input_scheme, o_games_db, s_raw_name):
+    if s_input_scheme == 'xbox360':
+        s_output = _xbox360_to_historic(s_raw_name, o_games_db)
+
+    elif s_input_scheme == 'zsnes':
+        s_output = _zsnes_to_historic(s_raw_name, o_games_db)
+
     else:
-        print 'ERROR: Games database not found'
+        print 'ERROR: Unknown input scheme "%s"' % s_input_scheme
         sys.exit()
 
     # Title sanitation
@@ -32,8 +36,20 @@ def raw_to_historic(s_orig_name, o_games_db):
 
     return s_output
 
+def _zsnes_to_historic(s_orig_name, o_games_db):
+    print s_orig_name
+    pass
 
 def _xbox360_to_historic(s_orig_name, o_games_db):
+    """
+    Method to rename the screenshots taken by Freestyle Dash in the xbox 360.
+
+    :param s_orig_name: Original screenshot file name (without extension) taken by Freestyle Dash screenshot plugin.
+
+    :param o_games_db: The database containing the correspondence between game ids and names.
+
+    :return:
+    """
 
     # Data read from filename
     # First the filename is completed with 0 because only milliseconds are limited to 3 characters or even less. Then,
@@ -55,3 +71,4 @@ def _xbox360_to_historic(s_orig_name, o_games_db):
     s_name = o_games_db.get_title_by_id(s_id)
 
     return s_HISTORIC_FORMAT % (s_date, s_time, o_games_db.s_name, s_id, s_name)
+

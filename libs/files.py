@@ -4,6 +4,13 @@ Helper functions for file handling
 import os
 
 
+class File:
+    def __init__(self, *s_args):
+        self.s_path = os.path.join(*s_args)
+        self.s_full_name = ''
+        self.s_name = ''
+        self.s_ext = ''
+
 def clean_dir(s_dir):
     """
     Helper function to clean the temporary directory.

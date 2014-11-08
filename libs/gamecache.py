@@ -1,4 +1,5 @@
 import os
+import sys
 
 import xcrapper
 
@@ -7,10 +8,11 @@ class Database:
     def __init__(self, s_name, s_cache_file):
         self.s_name = s_name
         self._ds_entries = {}
+        self._s_header = ''
 
         if not os.path.isfile(s_cache_file):
-            o_file = open(s_cache_file, 'w')
-            o_file.close()
+            print 'ERROR: Can\'t load database. File "%s" doesn\'t exist.' % s_cache_file
+            sys.exit()
 
         self._s_cache_file = s_cache_file
         self._load_data()
@@ -24,12 +26,27 @@ class Database:
 
         o_file = open(self._s_cache_file, 'r')
 
-        for s_line in o_file:
-            s_line = s_line.strip()
-            s_id = s_line.partition('\t')[0]
-            s_title = s_line.partition('\t')[2]
+        b_header_mode = True
+        s_header = ''
 
-            self._ds_entries[s_id] = s_title.decode('utf8')
+        for s_line in o_file:
+            s_line_clean = s_line.strip()
+
+            # Parsing the header
+            if b_header_mode:
+                if len(s_line_clean) != 0 and s_line_clean[0] == '#':
+                    s_header += s_line
+                else:
+                    b_header_mode = False
+                    self._s_header = s_header.decode('utf8')
+
+            # Parsing the content
+            else:
+                if len(s_line) != 0 and s_line[0] != '#':
+                    s_id = s_line_clean.partition('\t')[0]
+                    s_title = s_line_clean.partition('\t')[2]
+
+                    self._ds_entries[s_id] = s_title.decode('utf8')
 
         o_file.close()
 
@@ -49,6 +66,8 @@ class Database:
         ld_data_elements = sorted(ld_data_elements, key=lambda d_data_element: d_data_element['title'])
 
         o_file = open(self._s_cache_file, 'w')
+
+        o_file.write(self._s_header.encode('utf8', 'ignore'))
 
         for d_data_element in ld_data_elements:
             o_file.write('%s\t%s\n' % (d_data_element['id'], d_data_element['title'].encode('utf8', 'ignore')))
