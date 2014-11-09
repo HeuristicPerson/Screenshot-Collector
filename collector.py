@@ -5,22 +5,12 @@ import sys
 from libs import cons
 from libs import shotsource
 
-
-# Configuration - Basics
-#=======================================================================================================================
-#s_TEMP_DIR = 'images/temp'              # Directory for temporal files
-#s_HIST_DIR = 'images/historic'          # Directory for historic images
-#s_HIST_EXT = 'png'                      # Historical images extension (typically png for quality or jpg for low size)
-#s_DAT_DIR = 'dats'                      # Directory containing Id/Title dat files
-
-
 # Configuration - FTPs
 #=======================================================================================================================
 lo_shot_sources = []
 
 # Xbox 360 FTP configuration
 o_shot_source_xbox360 = shotsource.ShotSource('Xbox 360')
-
 o_shot_source_xbox360.set_source('ftp', '192.168.0.106', '/Hdd1/Freestyle Dash/Plugins/UserData')
 o_shot_source_xbox360.set_user_pass('xbox', 'xbox')                     # User and pass for FTP or SAMBA
 
@@ -34,14 +24,23 @@ lo_shot_sources.append(o_shot_source_xbox360)
 
 # zsnes dir configuration
 o_shot_source_snes = shotsource.ShotSource('Super Nintendo')
-
 o_shot_source_snes.set_source('dir', 'localhost', '/home/david/.zsnes')
 
 o_shot_source_snes.set_db_and_scheme('snes', 'zsnes')                   # Name of this cfg (used for DB and renaming)
 o_shot_source_snes.set_get_exts('bmp')                                  # File extensions to download_file from source
 o_shot_source_snes.set_del_exts()                                       # File extensions to remove from source
 
-#lo_shot_sources.append(o_shot_source_snes)
+lo_shot_sources.append(o_shot_source_snes)
+
+# megadrive dir configuration
+o_shot_source_megadrive = shotsource.ShotSource('Sega Megadrive')
+o_shot_source_megadrive.set_source('dir', 'localhost', '/home/david/.Kega Fusion')
+
+o_shot_source_megadrive.set_db_and_scheme('megadrive', 'kega')          # Name of this cfg (used for DB and renaming)
+o_shot_source_megadrive.set_get_exts('tga')                             # File extensions to download_file from source
+o_shot_source_megadrive.set_del_exts()                                  # File extensions to remove from source
+
+lo_shot_sources.append(o_shot_source_megadrive)
 
 # Helper function to avoid multiple instances of the script
 #=======================================================================================================================

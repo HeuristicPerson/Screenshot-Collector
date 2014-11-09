@@ -13,8 +13,8 @@ import shotname
 
 class ShotSource():
     """
-    Class to archive_files information about a source (ftp, folder, samba folder... maybe more in the future) where screenshots
-    can be found.
+    Class to archive_files information about a source (ftp, folder, samba folder... maybe more in the future) where
+    screenshots can be found.
     """
 
     def __init__(self, s_name):
@@ -207,14 +207,17 @@ class ShotSource():
 
             os.remove(s_src_img)
 
-        print '            Files converted: %i' % i_files_processed
-        print '              Original size: %s' % files.human_size(i_orig_size)
         if i_orig_size != 0:
-            print '              Archived size: %s (%0.1f%%)' % (files.human_size(i_mod_size),
-                                                                 100.0*i_mod_size/i_orig_size)
+            s_ratio = '%0.1f%%' % (100.0 * i_mod_size / i_orig_size)
         else:
-            print '              Archived size: %s (%0.1f%%)' % (files.human_size(i_mod_size), 0.0)
-        print
+            s_ratio = '%0.1f%%' % 0.0
+
+        s_report = 'Converted %i files from %s to %s (%s)\n' % (i_files_processed,
+                                                            files.human_size(i_orig_size),
+                                                            files.human_size(i_mod_size),
+                                                            s_ratio)
+
+        print s_report.rjust(78)
 
     def set_clean_dirs(self):
         self._b_dir_keep = False

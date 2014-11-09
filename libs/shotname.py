@@ -38,6 +38,9 @@ def raw_to_historic(o_games_db, s_src_name):
     if s_scheme == 'freestyledash':
         ds_parsed_data = _xbox360_to_historic(s_raw_name, o_games_db)
 
+    elif s_scheme == 'kega':
+        ds_parsed_data = _kega_to_historic(s_raw_name, o_games_db)
+
     elif s_scheme == 'zsnes':
         ds_parsed_data = _zsnes_to_historic(s_raw_name, o_games_db)
 
@@ -53,12 +56,12 @@ def raw_to_historic(o_games_db, s_src_name):
     return s_historic_output
 
 
-def _zsnes_to_historic(s_raw_name, o_games_db):
-    s_rom_name = s_raw_name.rpartition('_')[0]
+def _kega_to_historic(s_raw_name, o_games_db):
+    pass
+    s_orig_name = s_raw_name[0:-3]
+    s_id = o_games_db.get_id_by_title(s_orig_name)
 
-    s_id = o_games_db.get_id_by_title(s_rom_name)
-
-    return {'s_name': s_rom_name, 's_id': s_id, 'f_timestamp': 0}
+    return {'s_name': s_orig_name, 's_id': s_id, 'f_timestamp': 0}
 
 
 def _xbox360_to_historic(s_orig_name, o_games_db):
@@ -93,3 +96,10 @@ def _xbox360_to_historic(s_orig_name, o_games_db):
 
     return {'s_name': s_name, 's_id': s_id, 'f_timestamp': 0}
 
+
+def _zsnes_to_historic(s_raw_name, o_games_db):
+    s_rom_name = s_raw_name.rpartition('_')[0]
+
+    s_id = o_games_db.get_id_by_title(s_rom_name)
+
+    return {'s_name': s_rom_name, 's_id': s_id, 'f_timestamp': 0}
