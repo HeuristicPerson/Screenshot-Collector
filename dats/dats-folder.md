@@ -17,4 +17,5 @@ The content of dat files should be similar to:
     fbf3c0ff	3x3 Eyes - Seima Kourinden (Japan)
     ...
     
-
+* \# Indicates the line is a comment.
+* A tabulator is used to separate the id of the game and its title.
