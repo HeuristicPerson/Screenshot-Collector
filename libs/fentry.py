@@ -74,8 +74,8 @@ class FileEntry:
     def get_human_date(self):
         if self.f_time is not None:
             o_date = datetime.datetime.fromtimestamp(self.f_time)
-            # One decimal position should be enough for the screenshot timestamp
-            s_date = o_date.strftime('%Y-%m-%d %H-%M-%S.%f')[0:-5]
+            # Two decimal position should be enough for the screenshot timestamp
+            s_date = o_date.strftime('%Y-%m-%d %H-%M-%S.%f')[0:-4]
             return s_date
 
     def is_dir(self):

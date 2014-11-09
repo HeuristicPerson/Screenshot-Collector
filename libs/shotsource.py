@@ -323,7 +323,7 @@ class Ftp:
 
         b_deleted = False
 
-        if o_file_entry.s_type == 'd':
+        if o_file_entry.is_dir():
             # BIG WARNING HERE: After deleting a directory you are returned to the parent folder of the deleted one!!!
             self.o_ftp.cwd(o_file_entry.s_root)
             try:

@@ -1,6 +1,5 @@
 # Sega - Mega Drive - Genesis - 20140615-033957
 #------------------------------------------------------------------------------
-
 aeb4b262	007 Shitou - The Duel (Japan)
 c19ae368	10 Super Jogos (Brazil)
 36407c82	16 Zhang Ma Jiang (China) (Unl)
