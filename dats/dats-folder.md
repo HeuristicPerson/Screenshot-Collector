@@ -19,3 +19,5 @@ The content of dat files should be similar to:
     
 * \# Indicates the line is a comment.
 * A tabulator is used to separate the id of the game and its title.
+
+**IMPORTANT NOTE:** dat files must be enconded in UTF8.
