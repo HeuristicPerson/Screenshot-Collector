@@ -1,6 +1,6 @@
 import os
 import datetime
-import files
+import fileutils
 
 
 class FileEntry:
@@ -120,7 +120,7 @@ class FileEntry:
             i_size = 0
 
         self.i_size = i_size
-        self.s_size = files.human_size(self.i_size)
+        self.s_size = fileutils.human_size(self.i_size)
 
     def set_full_path(self, s_full_path):
         self.s_full_path = s_full_path

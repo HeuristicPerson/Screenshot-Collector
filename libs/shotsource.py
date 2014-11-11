@@ -6,7 +6,7 @@ import sys
 
 import cons
 import fentry
-import files
+import fileutils
 import gamecache
 import shotname
 
@@ -156,8 +156,10 @@ class ShotSource():
                 if self.o_source.delete(o_remote_fentry):
                     i_dirs_del += 1
 
-        s_report = 'Got: %i files (%s)  Del: %i files (%s) and %i dirs\n' % (i_files_got, files.human_size(i_bytes_got),
-                                                                             i_files_del, files.human_size(i_bytes_del),
+        s_report = 'Got: %i files (%s)  Del: %i files (%s) and %i dirs\n' % (i_files_got,
+                                                                             fileutils.human_size(i_bytes_got),
+                                                                             i_files_del,
+                                                                             fileutils.human_size(i_bytes_del),
                                                                              i_dirs_del)
 
         print s_report.rjust(78)
@@ -185,8 +187,8 @@ class ShotSource():
         i_orig_size = 0
         i_mod_size = 0
 
-        for s_src_file in files.get_files_in(s_src_dir):
-            s_orig_name, s_orig_ext = files.get_name_and_extension(s_src_file)
+        for s_src_file in fileutils.get_files_in(s_src_dir):
+            s_orig_name, s_orig_ext = fileutils.get_name_and_extension(s_src_file)
 
             s_arch_name = shotname.raw_to_historic(o_games_db, s_orig_name)
 
@@ -198,12 +200,12 @@ class ShotSource():
             s_cmd = 'convert "%s" "%s" 2>/dev/null' % (s_src_img, s_dst_img)
             os.system(s_cmd)
 
-            print 'Src: %s  %s' % (s_src_file, files.human_size(files.get_size_of(s_src_img)))
-            print 'Dsc: %s  %s' % (s_dst_file, files.human_size(files.get_size_of(s_dst_img)))
+            print 'Src: %s  %s' % (s_src_file, fileutils.human_size(fileutils.get_size_of(s_src_img)))
+            print 'Dsc: %s  %s' % (s_dst_file, fileutils.human_size(fileutils.get_size_of(s_dst_img)))
 
             i_files_processed += 1
-            i_orig_size += files.get_size_of(s_src_img)
-            i_mod_size += files.get_size_of(s_dst_img)
+            i_orig_size += fileutils.get_size_of(s_src_img)
+            i_mod_size += fileutils.get_size_of(s_dst_img)
 
             os.remove(s_src_img)
 
@@ -213,8 +215,8 @@ class ShotSource():
             s_ratio = '%0.1f%%' % 0.0
 
         s_report = 'Converted %i files from %s to %s (%s)\n' % (i_files_processed,
-                                                            files.human_size(i_orig_size),
-                                                            files.human_size(i_mod_size),
+                                                            fileutils.human_size(i_orig_size),
+                                                            fileutils.human_size(i_mod_size),
                                                             s_ratio)
 
         print s_report.rjust(78)
@@ -480,7 +482,7 @@ class Dir:
             o_file_entry._s_type = 'f'
 
         # Size
-        o_file_entry.set_size(files.get_size_of(s_path))
+        o_file_entry.set_size(fileutils.get_size_of(s_path))
 
         # Date
         o_file_entry.f_time = os.path.getmtime(s_path)

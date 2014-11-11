@@ -2,7 +2,6 @@
 #=======================================================================================================================
 #  Id       #  Title
 #-----------------------------------------------------------------------------------------------------------------------
-58410b66	Bastion
 5841086a	Boom Boom Rocket
 584108cE	Braid
 584108b7	Castle Crashers
@@ -23,6 +22,7 @@
 434307fc	Super Street Fighter IV Arcade Edition
 58411238	The Cave
 555308c5	The Stick of Truth
+58410aad	Trials Evolution
 58411401	Trials Fusion
 5841095a	Trials HD
 58411428	Valiant Hearts

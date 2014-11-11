@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 import fentry
@@ -22,7 +23,6 @@ class Database:
         o_cache_file.from_local_path(s_cache_file)
 
         self._s_name = o_cache_file.s_name
-
 
     def _load_data(self):
         """
@@ -82,6 +82,17 @@ class Database:
         o_file.close()
 
     def get_title_by_id(self, s_id, s_sanitation='raw'):
+        """
+        Method to obtain the title of a game from its id. In case the selected id doesn't appear in the database, the
+        title is searched in an online web page using the right scrapper selected by the name of the database.
+
+        :param s_id: id to search.
+        :param s_sanitation: sanitation method to use with the title. 'raw' original UTF8 title; 'ascii' title is
+                             downgraded to ascii code deleting all the unrecognized symbols
+
+        :return: A string containing the title of the game
+        """
+
 
         s_id = s_id.strip()
 
@@ -93,6 +104,13 @@ class Database:
 
             self._ds_entries[s_id] = s_title
             self._write_data()
+
+        if s_sanitation == 'ascii':
+            s_title = s_title.encode('ascii', 'ignore')
+        elif s_sanitation == 'plain':
+            s_SANITATION_PATTERN = r'[^\w\d \.\-_]'
+            s_title = re.sub(s_SANITATION_PATTERN, '', s_title, flags=re.I)
+            s_title = s_title.lower()
 
         return s_title
 

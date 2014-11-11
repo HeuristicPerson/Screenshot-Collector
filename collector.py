@@ -1,5 +1,4 @@
 import fcntl
-import os
 import sys
 
 from libs import cons
@@ -16,7 +15,7 @@ o_shot_source_xbox360.set_user_pass('xbox', 'xbox')                     # User a
 
 o_shot_source_xbox360.set_db_and_scheme('xbox360', 'freestyledash')     # Name of the DB and source screenshot scheme
 o_shot_source_xbox360.set_get_exts('bmp')                               # File extensions to download_file from source
-o_shot_source_xbox360.set_del_exts('bmp', 'meta')                       # File extensions to remove from source
+o_shot_source_xbox360.set_del_exts('meta')                       # File extensions to remove from source
 o_shot_source_xbox360.set_recursive()                                   # Searching for images recursively
 o_shot_source_xbox360.set_clean_dirs()                                  # Image folders are deleted (if empty)
 
