@@ -105,7 +105,7 @@ class ShotSource():
         :return: Nothing
         """
 
-        print 'Getting images from source: %s (%s, %s)' % (self.s_name, self._s_type, self._s_host)
+        print 'Getting images from: %s (%s, %s)' % (self.s_name, self._s_type, self._s_host)
         print '-' * 78
 
         self._connect()

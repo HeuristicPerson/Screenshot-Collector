@@ -2,7 +2,6 @@
 #=======================================================================================================================
 #  Id       #  Title
 #-----------------------------------------------------------------------------------------------------------------------
-5841086a	Boom Boom Rocket
 584108cE	Braid
 584108b7	Castle Crashers
 58410a79	Costume Quest
@@ -12,6 +11,8 @@
 4d5309c9	Forza Horizon
 00000000	Freestyle Dash
 58411446	Guacamelee! STCE
+584109d1	LIMBO
+58410a59	Lara Croft: GoL
 415607e6	Modern Warfare
 555308c3	Rayman Legends
 454108e6	Skate 3
@@ -22,6 +23,7 @@
 434307fc	Super Street Fighter IV Arcade Edition
 58411238	The Cave
 555308c5	The Stick of Truth
+58411216	The Wolf Among Us
 58410aad	Trials Evolution
 58411401	Trials Fusion
 5841095a	Trials HD

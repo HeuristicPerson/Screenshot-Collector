@@ -16,7 +16,7 @@ def get_title_by_id(s_system, s_id):
         s_output = _xbox360(s_id)
 
     else:
-        s_output = '--unknown--'
+        s_output = 'unknown scrapper'
 
     return s_output
 
@@ -40,7 +40,7 @@ def _xbox360(s_id):
         o_page = requests.get(s_url)
         o_tree = lxml.html.fromstring(o_page.text)
 
-        s_title = o_tree.xpath('//h1/text()')[0]
+        s_title = o_tree.xpath('//h1/text()')[0].strip()
 
         # To avoid the unknown game error
         if s_title[0:6] == 'Ooops!':

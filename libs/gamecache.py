@@ -5,6 +5,10 @@ import sys
 import fentry
 import xcrapper
 
+# Constants
+#=======================================================================================================================
+s_SANITATION_PATTERN = r'[^\w\d \.\-_]'
+
 
 class Database:
     def __init__(self, s_cache_file):
@@ -108,11 +112,10 @@ class Database:
         if s_sanitation == 'ascii':
             s_title = s_title.encode('ascii', 'ignore')
         elif s_sanitation == 'plain':
-            s_SANITATION_PATTERN = r'[^\w\d \.\-_]'
             s_title = re.sub(s_SANITATION_PATTERN, '', s_title, flags=re.I)
-            s_title = s_title.lower()
+            s_title = s_title.encode('ascii', 'ignore').lower()
 
-        return s_title
+        return s_title.strip()
 
     def get_id_by_title(self, s_title):
 

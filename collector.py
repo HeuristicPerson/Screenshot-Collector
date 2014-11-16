@@ -69,5 +69,5 @@ if not is_file_locked('.lock'):
     sys.exit()
 
 for o_shot_source in lo_shot_sources:
-    o_shot_source.download_files(cons.s_TEMP_DIR)
-    o_shot_source.archive_files(cons.s_TEMP_DIR, cons.s_HIST_DIR)
+    o_shot_source.download_files(cons.s_TEMP_COLLECT_DIR)
+    o_shot_source.archive_files(cons.s_TEMP_COLLECT_DIR, cons.s_HIST_DIR)
