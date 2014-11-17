@@ -15,12 +15,16 @@ s_FONT_DIR = 'media'                        # Directory for the fonts.
 
 # Configuration - Mosaic creation
 #=======================================================================================================================
-s_PERIODICITY = 'yearly'
+s_PERIODICITY = 'monthly'
 s_TILE_BACKGROUND = 'Black'          # Color for the background of the mosaic (Imagemagick color).
 s_TILE_FOOTER_COLOR = 'Grey'         # Color for the title of each game in the mosaic (Imagemagick color).
 s_TILE_FOOTER_FONT = 'collegia.ttf'  # Font used for the footer of each screenshot.
 i_TILE_FOOTER_SIZE = 24              # Font size used for the footer of each screenshot.
 s_TILE_SIZE = '320x180'              # Size of each screenshot.
+s_MOSAIC_HEADING_FONT = 'media/collegia.ttf'
+
+i_MOSAIC_HEADING_SIZE = 32
+s_MOSAIC_HEADING_COLOR = 'White'
 
 # Adding full path to relative paths
 s_CWD = sys.path[0]

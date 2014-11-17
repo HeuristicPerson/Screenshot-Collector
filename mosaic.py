@@ -1,4 +1,8 @@
+#!/usr/local/bin/python
+# -*- coding: utf8 -*-
+
 import datetime
+import locale
 import os
 import shutil
 import sys
@@ -8,15 +12,7 @@ from libs import gamecache
 from libs import fileutils
 
 
-# Configurable constants
-#=======================================================================================================================
-
-# Tile mosaic configuration
-#---------------------------------------------------------
-s_TILE_FOOTER_FONT = 'media/collegia.ttf'
-s_TILE_FOOTER_COLOR = 'White'
-s_TILE_HEADING_FONT = 'media/collegia.ttf'
-s_TILE_HEADING_COLOR = 'White'
+locale.setlocale(locale.LC_ALL, 'es_ES.utf8')
 
 
 # Main code - Collage
@@ -36,44 +32,64 @@ def get_period():
     # Grouping name configuration to create the mosaics and to check previous states
     if cons.s_PERIODICITY == 'daily':
         o_yesterday = o_date_now - datetime.timedelta(days=1)
-        o_start_date = datetime.datetime(o_yesterday.year, o_yesterday.month, o_yesterday.day, 0, 0, 0, 0)
-        o_end_date = datetime.datetime(o_yesterday.year, o_yesterday.month, o_yesterday.day, 23, 59, 59, 999999)
+        o_start = datetime.datetime(o_yesterday.year, o_yesterday.month, o_yesterday.day, 0, 0, 0, 0)
+        o_end = datetime.datetime(o_yesterday.year, o_yesterday.month, o_yesterday.day, 23, 59, 59, 999999)
         #s_date_format = '%Y-%j'
 
     elif cons.s_PERIODICITY == 'weekly':
         o_last_monday = o_date_now - datetime.timedelta(o_date_now.isoweekday() + 6)
         o_last_sunday = o_last_monday + datetime.timedelta(6)
-        o_start_date = datetime.datetime(o_last_monday.year, o_last_monday.month, o_last_monday.day, 0, 0, 0, 0)
-        o_end_date = datetime.datetime(o_last_sunday.year, o_last_sunday.month, o_last_sunday.day, 23, 59, 59, 999999)
+        o_start = datetime.datetime(o_last_monday.year, o_last_monday.month, o_last_monday.day, 0, 0, 0, 0)
+        o_end = datetime.datetime(o_last_sunday.year, o_last_sunday.month, o_last_sunday.day, 23, 59, 59, 999999)
         #s_date_format = '%Y-%U'
 
     elif cons.s_PERIODICITY == 'monthly':
-        o_start_date = datetime.datetime(o_date_now.year, o_date_now.month - 1, 1, 0, 0, 0, 0)
+        o_start = datetime.datetime(o_date_now.year, o_date_now.month - 1, 1, 0, 0, 0, 0)
         o_end_day = o_date_now - datetime.timedelta(days=o_date_now.day)
-        o_end_date = datetime.datetime(o_end_day.year, o_end_day.month, o_end_day.day, 23, 59, 59, 999999)
+        o_end = datetime.datetime(o_end_day.year, o_end_day.month, o_end_day.day, 23, 59, 59, 999999)
         #s_date_format = '%Y-%m'
 
     elif cons.s_PERIODICITY == 'yearly':
-        o_start_date = datetime.datetime(o_date_now.year - 1, 1, 1, 0, 0, 0, 0)
-        o_end_date = datetime.datetime(o_date_now.year - 1, 12, 31, 23, 59, 59, 999999)
+        o_start = datetime.datetime(o_date_now.year - 1, 1, 1, 0, 0, 0, 0)
+        o_end = datetime.datetime(o_date_now.year - 1, 12, 31, 23, 59, 59, 999999)
         #s_date_format = '%Y'
 
     else:
         print 'ERROR: Unknown grouping periodicity "%s"' % cons.s_PERIODICITY
         sys.exit()
 
-    print 'Current timestamp: %s' % o_date_now.isoformat()
-    print 'Periodicity: %s' % cons.s_PERIODICITY
-    print 'Valid period: %s  -  %s' % (o_start_date.isoformat(), o_end_date.isoformat())
+    #print 'Current timestamp: %s' % o_date_now.isoformat()
+    #print 'Periodicity: %s' % cons.s_PERIODICITY
+    #print 'Valid period: %s  -  %s' % (o_start.isoformat(), o_end.isoformat())
 
-    return o_start_date, o_end_date
+    return o_start, o_end
 
 
-def get_images(s_valid_timestamp, s_date_format):
-#    global s_date_prev
-#    global s_mosaic_name
+def get_period_human_name(o_datetime, s_naming):
+    if s_naming == 'daily':
+        s_output = o_datetime.strftime('%d de %B de %Y')
+    elif s_naming == 'weekly':
+        s_output = o_datetime.strftime('%Y, semana %U')
+    elif s_naming == 'monthly':
+        s_output = o_datetime.strftime('%B de %Y').capitalize()
+    elif s_naming == 'yearly':
+        s_output = o_datetime.strftime('%Y')
 
-    print 'Getting images from historic folder'
+    return s_output
+
+def get_images(o_start_date, o_end_date):
+    """
+    Function to obtain from the historic folder all the screenshots taken in certain period of time.
+
+    :param o_start_date: Starting date. Datetime object from datetime module.
+
+    :param o_end_date: Starting date. Datetime object from datetime module.
+
+    :return: Nothing.
+    """
+
+    print 'Getting images in historic folder'
+    print 'From: %s to %s' % (o_start_date, o_end_date)
     print '-' * 78
 
     i_images_to_add = 0
@@ -93,16 +109,15 @@ def get_images(s_valid_timestamp, s_date_format):
         s_file_timestamp_full = s_file_name[0:22] + 4 * '0'
 
         o_file_date = datetime.datetime.strptime(s_file_timestamp_full, '%Y-%m-%d %H-%M-%S.%f')
-        s_file_timestamp_short = o_file_date.strftime(s_date_format)
 
-        if s_file_timestamp_short == s_valid_timestamp:
+        if o_start_date <= o_file_date <= o_end_date:
             i_images_to_add += 1
             shutil.copyfile(s_src_file, s_dst_file)
 
-            print 'Got: %s  %s' % (s_file_timestamp_short, s_file_name)
+            print 'Got: %s' % s_archived_image
 
 
-def watermarking():
+def process_shots():
     """
     Function that adds the title of the game to each screenshot.
 
@@ -110,6 +125,9 @@ def watermarking():
     """
 
     global o_game_db
+
+    print '\nResizing images + Name stamping in temp folder'
+    print '-' * 78
 
     # Creating every tile
     for s_image in fileutils.get_files_in(cons.s_TEMP_MOSAIC_DIR):
@@ -139,53 +157,58 @@ def watermarking():
         print 'Got: %s  %s --> %s' % (s_db, s_id, s_title)
 
 
-def composition():
+def compose(s_title, s_file):
+
+    print '\nCreating mosaic'
+    print '-' * 78
+    print 'Top: %s' % s_title
+    print 'Img: %i' % len(fileutils.get_files_in(cons.s_TEMP_MOSAIC_DIR))
+
     s_src_images = os.path.join(cons.s_TEMP_MOSAIC_DIR, '*.%s' % cons.s_HIST_EXT)
-    s_mosaic_file = os.path.join(cons.s_HIST_MOSAIC_DIR, '%s.jpg' % s_mosaic_name)
+    s_mosaic_file = os.path.join(cons.s_HIST_MOSAIC_DIR, '%s.jpg' % s_file)
 
     s_commandline = 'montage "%s" -geometry +2+2 -background %s "%s"' % (s_src_images, cons.s_TILE_BACKGROUND, s_mosaic_file)
     os.system(s_commandline)
-#
-#            # Adding an extra title at the top of the image
-#            s_commandline = 'convert "%s" ' \
-#                            '-background %s ' \
-#                            '-fill %s -font "%s" -pointsize %i label:\'%s\' +swap -gravity Center -append ' \
-#                            '"%s"'\
-#                            % (s_mosaic_file,
-#                               s_TILE_BACKGROUND,
-#                               s_TILE_HEADING_COLOR, s_TILE_HEADING_FONT, i_TILE_HEADING_SIZE, s_heading,
-#                               s_mosaic_file)
-#            os.system(s_commandline)
-#
-#            print 'Mosaic: Generated mosaic with %i screenshots.' % i_images_to_add
-#
-#        else:
-#            print 'Mosaic: No images found to be added to the mosaic.'
-#
-#    else:
-#        print 'Mosaic: Mosaic found. NOT generating a new one. '
-#
+
+    # Adding an extra title at the top of the image
+    s_commandline = 'convert "%s" ' \
+                    '-background %s ' \
+                    '-fill %s -font "%s" -pointsize %i label:\'%s\' +swap -gravity Center -append ' \
+                    '"%s"'\
+                    % (s_mosaic_file,
+                       cons.s_TILE_BACKGROUND,
+                       cons.s_MOSAIC_HEADING_COLOR, cons.s_MOSAIC_HEADING_FONT, cons.i_MOSAIC_HEADING_SIZE, s_title,
+                       s_mosaic_file)
+    os.system(s_commandline)
+
+    print 'Siz: %s' % fileutils.human_size(fileutils.get_size_of(s_mosaic_file))
+
 #    clean_temp()
 #
 
 # Main program
 #=======================================================================================================================
 o_game_db = None
-s_mosaic_pattern = ''
 
 # Obtaining the timestamp of the previous period of time and its format
 o_start_date, o_end_date = get_period()
 
 # Getting the files which match that timestamp using the provided pattern
-#get_images(s_date_prev, s_date_format)
+get_images(o_start_date, o_end_date)
+process_shots()
 
+# Compose the shots into one image
+o_half_period = (o_end_date - o_start_date) / 2
+o_mid_date = o_start_date + datetime.timedelta(seconds=o_half_period.total_seconds())
 
-#print s_date_prev, s_date_format
+s_title = get_period_human_name(o_mid_date, cons.s_PERIODICITY)
+
+compose(s_title, 'mosaic')
 
 #get_required_images()
 #
 #print '\nProcessing individual images'
 #print '-' * 78
 #
-#watermarking()
+#process_shots()
 #composition()
