@@ -77,6 +77,7 @@ def get_period_human_name(o_datetime, s_naming):
 
     return s_output
 
+
 def get_images(o_start_date, o_end_date):
     """
     Function to obtain from the historic folder all the screenshots taken in certain period of time.
@@ -115,6 +116,29 @@ def get_images(o_start_date, o_end_date):
             shutil.copyfile(s_src_file, s_dst_file)
 
             print 'Got: %s' % s_archived_image
+
+
+def get_mosaic_file_name(o_date):
+
+    s_output = 'mosaic - %s - %i ' % (cons.s_PERIODICITY, o_date.year)
+
+    if cons.s_PERIODICITY == 'daily':
+        s_output += 'day %s' % o_date.strftime('%j')
+
+    elif cons.s_PERIODICITY == 'weekly':
+        s_output += 'week %s' % o_date.strftime('%U')
+
+    elif cons.s_PERIODICITY == 'monthly':
+        s_output += 'month %s' % o_date.strftime('%m')
+
+    elif cons.s_PERIODICITY == 'yearly':
+        pass
+
+    else:
+        print 'ERROR: Unknown periodicity "%s"' % cons.s_PERIODICITY
+        sys.exit()
+
+    return s_output.strip()
 
 
 def process_shots():
@@ -183,8 +207,8 @@ def compose(s_title, s_file):
 
     print 'Siz: %s' % fileutils.human_size(fileutils.get_size_of(s_mosaic_file))
 
-#    clean_temp()
-#
+    fileutils.clean_dir(cons.s_TEMP_MOSAIC_DIR)
+
 
 # Main program
 #=======================================================================================================================
@@ -201,14 +225,11 @@ process_shots()
 o_half_period = (o_end_date - o_start_date) / 2
 o_mid_date = o_start_date + datetime.timedelta(seconds=o_half_period.total_seconds())
 
-s_title = get_period_human_name(o_mid_date, cons.s_PERIODICITY)
+s_heading = get_period_human_name(o_mid_date, cons.s_PERIODICITY)
 
-compose(s_title, 'mosaic')
+s_file_name = get_mosaic_file_name(o_mid_date)
 
-#get_required_images()
-#
-#print '\nProcessing individual images'
-#print '-' * 78
-#
-#process_shots()
-#composition()
+print 'Title: %s' % s_heading
+
+compose(s_heading, s_file_name)
+

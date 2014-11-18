@@ -15,7 +15,7 @@ s_FONT_DIR = 'media'                        # Directory for the fonts.
 
 # Configuration - Mosaic creation
 #=======================================================================================================================
-s_PERIODICITY = 'monthly'
+s_PERIODICITY = 'weekly'
 s_TILE_BACKGROUND = 'Black'          # Color for the background of the mosaic (Imagemagick color).
 s_TILE_FOOTER_COLOR = 'Grey'         # Color for the title of each game in the mosaic (Imagemagick color).
 s_TILE_FOOTER_FONT = 'collegia.ttf'  # Font used for the footer of each screenshot.
