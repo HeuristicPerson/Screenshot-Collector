@@ -3,6 +3,7 @@ Helper functions for file handling
 """
 import os
 
+
 def clean_dir(s_dir):
     """
     Helper function to clean the temporary directory.

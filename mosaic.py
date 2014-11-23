@@ -11,7 +11,6 @@ from libs import cons
 from libs import gamecache
 from libs import fileutils
 
-
 locale.setlocale(locale.LC_ALL, 'es_ES.utf8')
 
 
@@ -66,6 +65,16 @@ def get_period():
 
 
 def get_period_human_name(o_datetime, s_naming):
+    """
+    Function to return the name of a period of time given the date and the period measuring system.
+
+    :param o_datetime: Datetime object.
+
+    :param s_naming: 'daily', 'weekly', 'monthly' or 'yearly'
+
+    :return: A string with the human name of that period. i.e. '2014, week 23'
+    """
+
     if s_naming == 'daily':
         s_output = o_datetime.strftime('%d de %B de %Y')
     elif s_naming == 'weekly':
@@ -74,6 +83,9 @@ def get_period_human_name(o_datetime, s_naming):
         s_output = o_datetime.strftime('%B de %Y').capitalize()
     elif s_naming == 'yearly':
         s_output = o_datetime.strftime('%Y')
+    else:
+        print 'ERROR: Unknown naming system "%s"' % s_naming
+        sys.exit()
 
     return s_output
 
@@ -182,33 +194,83 @@ def process_shots():
 
 
 def compose(s_title, s_file):
+    """
+    Function to
+    :param s_title:
+    :param s_file:
+    :return:
+    """
+
+    ls_files = fileutils.get_files_in(cons.s_TEMP_MOSAIC_DIR)
+    i_files = len(ls_files)
 
     print '\nCreating mosaic'
     print '-' * 78
     print 'Top: %s' % s_title
-    print 'Img: %i' % len(fileutils.get_files_in(cons.s_TEMP_MOSAIC_DIR))
 
     s_src_images = os.path.join(cons.s_TEMP_MOSAIC_DIR, '*.%s' % cons.s_HIST_EXT)
     s_mosaic_file = os.path.join(cons.s_HIST_MOSAIC_DIR, '%s.jpg' % s_file)
 
-    s_commandline = 'montage "%s" -geometry +2+2 -background %s "%s"' % (s_src_images, cons.s_TILE_BACKGROUND, s_mosaic_file)
-    os.system(s_commandline)
+    if i_files == 0:
+        print 'Img: 0 files, mosaic not created'
 
-    # Adding an extra title at the top of the image
-    s_commandline = 'convert "%s" ' \
-                    '-background %s ' \
-                    '-fill %s -font "%s" -pointsize %i label:\'%s\' +swap -gravity Center -append ' \
-                    '"%s"'\
-                    % (s_mosaic_file,
-                       cons.s_TILE_BACKGROUND,
-                       cons.s_MOSAIC_HEADING_COLOR, cons.s_MOSAIC_HEADING_FONT, cons.i_MOSAIC_HEADING_SIZE, s_title,
-                       s_mosaic_file)
-    os.system(s_commandline)
+    else:
+        print 'Img: %i' % i_files
+        s_commandline = 'montage "%s" -geometry +2+2 -background %s "%s"' % (s_src_images,
+                                                                             cons.s_TILE_BACKGROUND,
+                                                                             s_mosaic_file)
+        os.system(s_commandline)
 
-    print 'Siz: %s' % fileutils.human_size(fileutils.get_size_of(s_mosaic_file))
+        # Adding an extra title at the top of the image
+        s_commandline = 'convert "%s" ' \
+                        '-background %s ' \
+                        '-fill %s -font "%s" -pointsize %i label:\'%s\' +swap -gravity Center -append ' \
+                        '"%s"'\
+                        % (s_mosaic_file,
+                           cons.s_TILE_BACKGROUND,
+                           cons.s_MOSAIC_HEADING_COLOR, cons.s_MOSAIC_HEADING_FONT, cons.i_MOSAIC_HEADING_SIZE, s_title,
+                           s_mosaic_file)
+        os.system(s_commandline)
 
-    fileutils.clean_dir(cons.s_TEMP_MOSAIC_DIR)
+        print 'Siz: %s' % fileutils.human_size(fileutils.get_size_of(s_mosaic_file))
 
+        # As an example, I post the mosaic to twitter using a not included library. Create your own one or do something
+        # totally different.
+        demo_tweet(s_mosaic_file)
+
+        fileutils.clean_dir(cons.s_TEMP_MOSAIC_DIR)
+
+
+def demo_tweet(s_image):
+    """
+    This is a DEMO function used to call an external twitter library that will post the created mosaic. It won't work in
+    your computer since you don't have the required path and library.
+
+    :param s_image:
+    :return:
+    """
+
+    # Importing the required twitter library
+    s_current_dir = sys.path[0]
+    s_twitter_lib_path = os.path.join(s_current_dir, '..', 'pgtwitter')
+    sys.path.append(s_twitter_lib_path)
+    import pgtwitter
+
+    # Creating the tweet text
+    if cons.s_PERIODICITY == 'daily':
+        s_text = 'This is what I played yesterday'
+    elif cons.s_PERIODICITY == 'weekly':
+        s_text = 'This is what I played last week'
+    elif cons.s_PERIODICITY == 'monthly':
+        s_text = 'This is what I played last month'
+    elif cons.s_PERIODICITY == 'yearly':
+        s_text = 'This is what I played last year'
+    else:
+        print 'ERROR: unknown periodicity "%s" in file cons.py' % cons.s_PERIODICITY
+        sys.exit()
+
+    # Sending the tweet
+    pgtwitter.post(s_text, s_image)
 
 # Main program
 #=======================================================================================================================
@@ -226,10 +288,7 @@ o_half_period = (o_end_date - o_start_date) / 2
 o_mid_date = o_start_date + datetime.timedelta(seconds=o_half_period.total_seconds())
 
 s_heading = get_period_human_name(o_mid_date, cons.s_PERIODICITY)
-
 s_file_name = get_mosaic_file_name(o_mid_date)
-
-print 'Title: %s' % s_heading
 
 compose(s_heading, s_file_name)
 
