@@ -1,0 +1,1 @@
+Default directory for historic archive of screenshots.

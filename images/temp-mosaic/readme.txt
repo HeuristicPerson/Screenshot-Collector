@@ -1,0 +1,1 @@
+Default directory for temporal files used during mosaic composition.
