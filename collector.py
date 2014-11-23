@@ -1,6 +1,17 @@
 #!/usr/local/bin/python
 # -*- coding: utf8 -*-
 
+"""
+Script to build a mosaic of images containing all the screenshots of the previous period of time. Imagine we are working
+on a daily basis, so the previous period of time is yesterday. If we were working in a monthly basis and we were in
+April, the previous period of time would be March.
+
+The mosaic can be configured using constants defined in 'libs/cons.py'. Basically, the options allow you to change the
+periodicity (daily, weekly, monthly, yearly), the background color, the font size and font color of the main heading and
+screenshot footer.
+"""
+
+
 import fcntl
 import sys
 
