@@ -1,3 +1,11 @@
+#!/usr/local/bin/python
+# -*- coding: utf8 -*-
+
+"""
+Library to handle in a common way different sources (ftp, dirs and samba dirs) for screenshots.
+"""
+
+
 import datetime
 import ftplib
 import os

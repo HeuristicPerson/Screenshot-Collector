@@ -1,7 +1,7 @@
 This is the default directory for dat files. A dat file is just a txt file containing game titles and their
-corresponding unique identification code. Typically, the identification code is an eight character hexadecimal sequence.
-The dats included in this program has been generated from [No-Intro Project](http://no-intro.org/) dats with the
-exception of xbox360 dat which is automatically generated scrapping information from
+corresponding unique identification code. Typically, the identification code is an eight character hexadecimal sequence
+(i.e. "0e0216e6") The dats included in this program has been generated from [No-Intro Project](http://no-intro.org/)
+dats with the exception of xbox360 dat which is automatically generated scrapping information from
 [Xbox Marketplace](http://marketplace.xbox.com).
 
 The content of dat files should be similar to:
@@ -20,4 +20,4 @@ The content of dat files should be similar to:
 * \# Indicates the line is a comment.
 * A tabulator is used to separate the id of the game and its title.
 
-**IMPORTANT NOTE:** dat files must be enconded in UTF8.
+**IMPORTANT NOTE:** dat files must be encoded in UTF8.
