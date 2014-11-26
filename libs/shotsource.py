@@ -209,7 +209,7 @@ class ShotSource():
             os.system(s_cmd)
 
             print 'Src: %s  %s' % (s_src_file, fileutils.human_size(fileutils.get_size_of(s_src_img)))
-            print 'Dsc: %s  %s' % (s_dst_file, fileutils.human_size(fileutils.get_size_of(s_dst_img)))
+            print 'Dst: %s  %s' % (s_dst_file, fileutils.human_size(fileutils.get_size_of(s_dst_img)))
 
             i_files_processed += 1
             i_orig_size += fileutils.get_size_of(s_src_img)

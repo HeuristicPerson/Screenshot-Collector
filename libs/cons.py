@@ -13,17 +13,19 @@ s_DAT_DIR = 'dats'                            # Directory containing Id/Title da
 
 s_TEMP_MOSAIC_DIR = 'images/temp-mosaic'      # Directory for temporal files during mosaic creation
 s_HIST_MOSAIC_DIR = 'images/mosaic'
-s_LANG = 'es'
+s_LANG = 'es'                                 # Language of the program
 s_FONT_DIR = 'media'                          # Directory for the fonts.
 
 # Configuration - Mosaic creation
 #=======================================================================================================================
-s_PERIODICITY = 'daily'
+s_PERIOD = 'week'
 s_TILE_BACKGROUND = 'Black'                   # Color for the background of the mosaic (Imagemagick color).
 s_TILE_FOOTER_COLOR = 'Grey'                  # Color for the title of each game in the mosaic (Imagemagick color).
 s_TILE_FOOTER_FONT = 'collegia.ttf'           # Font used for the footer of each screenshot.
 i_TILE_FOOTER_SIZE = 24                       # Font size used for the footer of each screenshot.
 s_TILE_SIZE = '320x180'                       # Size of each screenshot.
+i_TILE_BOTTOM_MARGIN = 40                     # Margin at the bottom of the footer
+i_TILE_WIDTH = 4                              # Width, in tiles, of the mosaic. i.e. 4
 s_MOSAIC_HEADING_FONT = 'media/collegia.ttf'
 
 i_MOSAIC_HEADING_SIZE = 32

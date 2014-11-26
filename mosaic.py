@@ -1,6 +1,7 @@
 #!/usr/local/bin/python
 # -*- coding: utf8 -*-
 
+import argparse
 import datetime
 import locale
 import os
@@ -14,9 +15,9 @@ from libs import fileutils
 locale.setlocale(locale.LC_ALL, 'es_ES.utf8')
 
 
-# Main code - Collage
+# Helper functions
 #=======================================================================================================================
-def get_period():
+def get_datetime_range(o_datetime, s_period):
     """
     Function to build the date-stamp of the previous time section. i.e. If we were working with a weekly periodicity and
     we were in the week 30 of the year 2014, the previous timestamp would be 2014-29.
@@ -26,65 +27,57 @@ def get_period():
     :return: s_date_format: A string representing the pattern for the timestamp. i.e. '%Y-%U'
     """
 
-    o_date_now = datetime.datetime.now()
+    #o_date_now = datetime.datetime.now()
 
     # Grouping name configuration to create the mosaics and to check previous states
-    if cons.s_PERIODICITY == 'daily':
-        o_yesterday = o_date_now - datetime.timedelta(days=1)
+    if s_period == 'day':
+        o_yesterday = o_datetime - datetime.timedelta(days=1)
         o_start = datetime.datetime(o_yesterday.year, o_yesterday.month, o_yesterday.day, 0, 0, 0, 0)
         o_end = datetime.datetime(o_yesterday.year, o_yesterday.month, o_yesterday.day, 23, 59, 59, 999999)
-        #s_date_format = '%Y-%j'
 
-    elif cons.s_PERIODICITY == 'weekly':
-        o_last_monday = o_date_now - datetime.timedelta(o_date_now.isoweekday() + 6)
+    elif s_period == 'week':
+        o_last_monday = o_datetime - datetime.timedelta(o_datetime.isoweekday() + 6)
         o_last_sunday = o_last_monday + datetime.timedelta(6)
         o_start = datetime.datetime(o_last_monday.year, o_last_monday.month, o_last_monday.day, 0, 0, 0, 0)
         o_end = datetime.datetime(o_last_sunday.year, o_last_sunday.month, o_last_sunday.day, 23, 59, 59, 999999)
-        #s_date_format = '%Y-%U'
 
-    elif cons.s_PERIODICITY == 'monthly':
-        o_start = datetime.datetime(o_date_now.year, o_date_now.month - 1, 1, 0, 0, 0, 0)
-        o_end_day = o_date_now - datetime.timedelta(days=o_date_now.day)
+    elif s_period == 'month':
+        o_start = datetime.datetime(o_datetime.year, o_datetime.month - 1, 1, 0, 0, 0, 0)
+        o_end_day = o_datetime - datetime.timedelta(days=o_datetime.day)
         o_end = datetime.datetime(o_end_day.year, o_end_day.month, o_end_day.day, 23, 59, 59, 999999)
-        #s_date_format = '%Y-%m'
 
-    elif cons.s_PERIODICITY == 'yearly':
-        o_start = datetime.datetime(o_date_now.year - 1, 1, 1, 0, 0, 0, 0)
-        o_end = datetime.datetime(o_date_now.year - 1, 12, 31, 23, 59, 59, 999999)
-        #s_date_format = '%Y'
+    elif s_period == 'year':
+        o_start = datetime.datetime(o_datetime.year - 1, 1, 1, 0, 0, 0, 0)
+        o_end = datetime.datetime(o_datetime.year - 1, 12, 31, 23, 59, 59, 999999)
 
     else:
-        print 'ERROR: Unknown grouping periodicity "%s"' % cons.s_PERIODICITY
+        print 'ERROR: Unknown grouping periodicity "%s"' % cons.s_PERIOD
         sys.exit()
-
-    #print 'Current timestamp: %s' % o_date_now.isoformat()
-    #print 'Periodicity: %s' % cons.s_PERIODICITY
-    #print 'Valid period: %s  -  %s' % (o_start.isoformat(), o_end.isoformat())
 
     return o_start, o_end
 
 
-def get_period_human_name(o_datetime, s_naming):
+def get_period_human_name(o_datetime, s_period):
     """
     Function to return the name of a period of time given the date and the period measuring system.
 
     :param o_datetime: Datetime object.
 
-    :param s_naming: 'daily', 'weekly', 'monthly' or 'yearly'
+    :param s_period: 'daily', 'weekly', 'monthly' or 'yearly'
 
     :return: A string with the human name of that period. i.e. '2014, week 23'
     """
 
-    if s_naming == 'daily':
+    if s_period == 'day':
         s_output = o_datetime.strftime('%d de %B de %Y')
-    elif s_naming == 'weekly':
+    elif s_period == 'week':
         s_output = o_datetime.strftime('%Y, semana %U')
-    elif s_naming == 'monthly':
+    elif s_period == 'month':
         s_output = o_datetime.strftime('%B de %Y').capitalize()
-    elif s_naming == 'yearly':
+    elif s_period == 'year':
         s_output = o_datetime.strftime('%Y')
     else:
-        print 'ERROR: Unknown naming system "%s"' % s_naming
+        print 'ERROR: Unknown naming system "%s"' % s_period
         sys.exit()
 
     return s_output
@@ -130,24 +123,31 @@ def get_images(o_start_date, o_end_date):
             print 'Got: %s' % s_archived_image
 
 
-def get_mosaic_file_name(o_date):
+def get_mosaic_file_name(o_datetime, s_period):
+    """
+    Function to build the file name (without extension) for the mosaic file.
 
-    s_output = 'mosaic - %s - %i ' % (cons.s_PERIODICITY, o_date.year)
+    :param o_datetime:
+    :param s_period:
+    :return:
+    """
 
-    if cons.s_PERIODICITY == 'daily':
-        s_output += 'day %s' % o_date.strftime('%j')
+    s_output = 'mosaic - %s - %i ' % (cons.s_PERIOD, o_datetime.year)
 
-    elif cons.s_PERIODICITY == 'weekly':
-        s_output += 'week %s' % o_date.strftime('%U')
+    if s_period == 'day':
+        s_output += 'day %s' % o_datetime.strftime('%j')
 
-    elif cons.s_PERIODICITY == 'monthly':
-        s_output += 'month %s' % o_date.strftime('%m')
+    elif s_period == 'week':
+        s_output += 'week %s' % o_datetime.strftime('%U')
 
-    elif cons.s_PERIODICITY == 'yearly':
+    elif s_period == 'month':
+        s_output += 'month %s' % o_datetime.strftime('%m')
+
+    elif s_period == 'year':
         pass
 
     else:
-        print 'ERROR: Unknown periodicity "%s"' % cons.s_PERIODICITY
+        print 'ERROR: Unknown periodicity "%s"' % cons.s_PERIOD
         sys.exit()
 
     return s_output.strip()
@@ -181,19 +181,19 @@ def process_shots():
 
         s_commandline = 'convert "%s" ' \
                         '-background %s -resize %s -gravity center -extent %s ' \
-                        '-fill %s -font "%s" -pointsize %i label:\'%s\' -gravity Center -append ' \
-                        '"%s"' \
+                        '-fill %s -font "%s" -pointsize %i -size %sx caption:\'%s\' -gravity Center -append ' \
+                        ' -gravity south -splice 0x%i "%s"' \
                         % (s_img_full_path,
                            cons.s_TILE_BACKGROUND, cons.s_TILE_SIZE, cons.s_TILE_SIZE,
-                           cons.s_TILE_FOOTER_COLOR, cons.s_TILE_FOOTER_FONT, cons.i_TILE_FOOTER_SIZE, s_title,
-                           s_img_full_path)
+                           cons.s_TILE_FOOTER_COLOR, cons.s_TILE_FOOTER_FONT, cons.i_TILE_FOOTER_SIZE, cons.s_TILE_SIZE.split('x')[0], s_title,
+                           cons.i_TILE_BOTTOM_MARGIN, s_img_full_path)
 
         os.system(s_commandline)
 
         print 'Got: %s  %s --> %s' % (s_db, s_id, s_title)
 
 
-def compose(s_title, s_file):
+def compose_shots(s_title, s_file):
     """
     Function to
     :param s_title:
@@ -216,7 +216,7 @@ def compose(s_title, s_file):
 
     else:
         print 'Img: %i' % i_files
-        s_commandline = 'montage "%s" -geometry +2+2 -background %s "%s"' % (s_src_images,
+        s_commandline = 'montage "%s" -geometry +2+2 -tile %ix -background %s "%s"' % (s_src_images,cons.i_TILE_WIDTH,
                                                                              cons.s_TILE_BACKGROUND,
                                                                              s_mosaic_file)
         os.system(s_commandline)
@@ -236,7 +236,7 @@ def compose(s_title, s_file):
 
         # As an example, I post the mosaic to twitter using a not included library. Create your own one or do something
         # totally different.
-        demo_tweet(s_mosaic_file)
+        # demo_tweet(s_mosaic_file)
 
         fileutils.clean_dir(cons.s_TEMP_MOSAIC_DIR)
 
@@ -252,43 +252,87 @@ def demo_tweet(s_image):
 
     # Importing the required twitter library
     s_current_dir = sys.path[0]
-    s_twitter_lib_path = os.path.join(s_current_dir, '..', 'pgtwitter')
+    s_twitter_lib_path = os.path.join(s_current_dir, '..', 'pgtweet')
     sys.path.append(s_twitter_lib_path)
-    import pgtwitter
+    import pgtweet
 
     # Creating the tweet text
-    if cons.s_PERIODICITY == 'daily':
-        s_text = 'This is what I played yesterday'
-    elif cons.s_PERIODICITY == 'weekly':
-        s_text = 'This is what I played last week'
-    elif cons.s_PERIODICITY == 'monthly':
-        s_text = 'This is what I played last month'
-    elif cons.s_PERIODICITY == 'yearly':
-        s_text = 'This is what I played last year'
+    if cons.s_PERIOD == 'daily':
+        ds_text = {'en': 'This is what I played yesterday #ScreenshotCollector',
+                   'es': 'A ésto jugué ayer #ScreenshotCollector'}
+    elif cons.s_PERIOD == 'weekly':
+        ds_text = {'en': 'This is what I played last week #ScreenshotCollector',
+                   'es': 'A ésto jugué la semana pasada #ScreenshotCollector'}
+    elif cons.s_PERIOD == 'monthly':
+        ds_text = {'en': 'This is what I played last month #ScreenshotCollector',
+                   'es': 'A ésto jugué el mes pasado #ScreenshotCollector'}
+    elif cons.s_PERIOD == 'yearly':
+        ds_text = {'en': 'This is what I played last year #ScreenshotCollector',
+                   'es': 'A ésto jugué el año pasado #ScreenshotCollector'}
     else:
-        print 'ERROR: unknown periodicity "%s" in file cons.py' % cons.s_PERIODICITY
+        print 'ERROR: unknown periodicity "%s" in file cons.py' % cons.s_PERIOD
         sys.exit()
 
     # Sending the tweet
-    pgtwitter.post(s_text, s_image)
+    pgtweet.post(ds_text[cons.s_LANG], s_image)
+
+
+def get_cmdline_options():
+    """
+    Function to process the commandline options.
+
+    :return: Todo: decide.
+    """
+
+    #TODO: decide the output data of this function.
+
+    o_arg_parser = argparse.ArgumentParser()
+    o_arg_parser.add_argument('-period',
+                              action='store',
+                              default=cons.s_PERIOD,
+                              choices=('day', 'week', 'month', 'year'),
+                              required=False,
+                              help='Periodicity of the mosaic. i.e. the period of time the images belong to')
+
+    o_arg_parser.add_argument('-date',
+                              action='store',
+                              default=datetime.datetime.now().strftime('%Y-%m-%d'),
+                              required=False,
+                              help='Date in the form of YYYY-MM-DD Year, Month, Day. i.e. 2014-07-23')
+
+    args = o_arg_parser.parse_args()
+
+    s_period = args.period
+    o_datetime = datetime.datetime.strptime(args.date, '%Y-%m-%d') + datetime.timedelta(hours=12)
+
+    #print s_period, o_datetime
+
+    return s_period, o_datetime
 
 # Main program
 #=======================================================================================================================
-o_game_db = None
 
-# Obtaining the timestamp of the previous period of time and its format
-o_start_date, o_end_date = get_period()
+# The period type (day, week, month, year) and the datetime object are obtain from the commandline parameters. If they
+# are not specified, default values are obtained from cons.py file.
+s_period, o_datetime = get_cmdline_options()
+
+# It's time to define the start and end of the time period.
+o_start_date, o_end_date = get_datetime_range(o_datetime, s_period)
 
 # Getting the files which match that timestamp using the provided pattern
 get_images(o_start_date, o_end_date)
+
+# Once the images are obtained, they can be processed using the information (full name) contained in o_game_db
+o_game_db = None
 process_shots()
 
-# Compose the shots into one image
+# Time to build the required information to for a) the mosaic heading, and b) the mosaic file name
 o_half_period = (o_end_date - o_start_date) / 2
 o_mid_date = o_start_date + datetime.timedelta(seconds=o_half_period.total_seconds())
 
-s_heading = get_period_human_name(o_mid_date, cons.s_PERIODICITY)
-s_file_name = get_mosaic_file_name(o_mid_date)
+s_heading = get_period_human_name(o_mid_date, s_period)
+s_file_name = get_mosaic_file_name(o_mid_date, s_period)
 
-compose(s_heading, s_file_name)
+# With the required information, the mosaic can be built and saved to disk.
+compose_shots(s_heading, s_file_name)
 
