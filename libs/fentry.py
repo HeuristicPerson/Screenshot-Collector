@@ -14,7 +14,7 @@ class FileEntry:
         self.i_size = 0                     # File size (in bytes?)
         self.s_size = ''                    # File size (human readable format)
 
-        self.f_time = None                  # File date (not used by now)
+        self.f_time = None                  # File date in epoch format.
         self.s_full_name = ''               # Full file name i.e. 'picture.jpg'
         self.s_name = ''                    # Short file name i.e. 'picture'
         self.s_ext = ''                     # File extension i.e. 'jpg'
