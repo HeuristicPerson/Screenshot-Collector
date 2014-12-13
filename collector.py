@@ -16,44 +16,9 @@ import fcntl
 import sys
 
 from libs import cons
+from libs import ini
 from libs import shotsource
 
-# Configuration - FTPs
-#=======================================================================================================================
-lo_shot_sources = []
-
-# Xbox 360 FTP configuration
-o_shot_source_xbox360 = shotsource.ShotSource('Xbox 360')
-o_shot_source_xbox360.set_source('ftp', '192.168.0.106', '/Hdd1/Freestyle Dash/Plugins/UserData')
-o_shot_source_xbox360.set_user_pass('xbox', 'xbox')                     # User and pass for FTP or SAMBA
-
-o_shot_source_xbox360.set_db_and_scheme('xbox360', 'freestyledash')     # Name of the DB and source screenshot scheme
-o_shot_source_xbox360.set_get_exts('bmp')                               # File extensions to download_file from source
-o_shot_source_xbox360.set_del_exts('meta')                              # File extensions to remove from source
-o_shot_source_xbox360.set_recursive()                                   # Searching for images recursively
-o_shot_source_xbox360.set_clean_dirs()                                  # Image folders are deleted (if empty)
-
-lo_shot_sources.append(o_shot_source_xbox360)
-
-# zsnes dir configuration
-o_shot_source_snes = shotsource.ShotSource('Super Nintendo')
-o_shot_source_snes.set_source('dir', 'localhost', '/home/david/.zsnes')
-
-o_shot_source_snes.set_db_and_scheme('snes', 'zsnes')                   # Name of this cfg (used for DB and renaming)
-o_shot_source_snes.set_get_exts('bmp')                                  # File extensions to download_file from source
-o_shot_source_snes.set_del_exts()                                       # File extensions to remove from source
-
-lo_shot_sources.append(o_shot_source_snes)
-
-# megadrive dir configuration
-o_shot_source_megadrive = shotsource.ShotSource('Sega Megadrive')
-o_shot_source_megadrive.set_source('dir', 'localhost', '/home/david/.Kega Fusion')
-
-o_shot_source_megadrive.set_db_and_scheme('megadrive', 'kega')          # Name of this cfg (used for DB and renaming)
-o_shot_source_megadrive.set_get_exts('tga')                             # File extensions to download_file from source
-o_shot_source_megadrive.set_del_exts()                                  # File extensions to remove from source
-
-lo_shot_sources.append(o_shot_source_megadrive)
 
 # Helper function to avoid multiple instances of the script
 #=======================================================================================================================
@@ -73,6 +38,87 @@ def is_file_locked(s_file):
     return True
 
 
+def read_sources_config(s_file):
+    """
+    Function to load the
+    :param s_file:
+    :return:
+    """
+
+    o_ini = ini.ParsedIni(s_file)
+
+    # Reading sources configuration
+    lo_sources = []
+
+    for dx_section in o_ini:
+        s_section = dx_section['section'].split(' ')[0]
+        ds_values = dx_section['values']
+        if s_section == 'source':
+
+            # Obtaining information from parsed ini file
+            s_type = ds_values.get('type', '')
+            if s_type not in ('dir', 'ftp', 'smb'):
+                print 'config.ini error: unknown or missing source type "%s"' % s_type
+                sys.exit()
+
+            s_address = ds_values.get('address', '')
+            if s_address == '':
+                print 'config.ini error: unknown or missing address "%s"' % s_address
+                sys.exit()
+
+            s_root = ds_values.get('root', '')
+
+            s_user = ds_values.get('user', '')
+
+            s_password = ds_values.get('password', '')
+
+            s_database = ds_values.get('database', '')
+            if s_database == '':
+                print 'config.ini error: unknown or missing database "%s"' % s_database
+                sys.exit()
+
+            s_scheme = ds_values.get('scheme', '')
+            if s_scheme == '':
+                print 'config.ini error: unknown or missing database "%s"' % s_scheme
+                sys.exit()
+
+            ls_get_exts = ini.list_str(ds_values.get('get_exts', ''))
+            if len(ls_get_exts) == 0:
+                print 'config.ini warning: not getting any extension from source "%s"' % dx_section['section']
+
+            ls_del_exts = ini.list_str(ds_values.get('del_exts', ''))
+
+            s_recursive = ds_values.get('recursive', '')
+            if s_recursive.lower() in ('yes', 'true', '1'):
+                b_recursive = True
+            else:
+                b_recursive = False
+
+            s_clean = ds_values.get('clean_dirs', '')
+            if s_recursive.lower() in ('yes', 'true', '1'):
+                b_clean = True
+            else:
+                b_clean = True
+
+            # With all the required data, the source can be configured
+            o_source = shotsource.ShotSource(ds_values.get('name', dx_section['section']))
+
+            o_source.set_source(s_type, s_address, s_root)
+            o_source.set_user_pass(s_user, s_password)         # User and pass for FTP or SAMBA
+
+            o_source.set_db_and_scheme(s_database, s_scheme)   # Name of the DB and source screenshot scheme
+            o_source.set_get_exts(*ls_get_exts)                 # File extensions to download_file from source
+            o_source.set_del_exts(*ls_del_exts)                 # File extensions to remove from source
+            if b_recursive:
+                o_source.set_recursive()                       # Searching for images recursively
+            if b_clean:
+                o_source.set_clean_dirs()
+
+            lo_sources.append(o_source)
+
+    return lo_sources
+
+
 # Main code
 #=======================================================================================================================
 print 'Screenshot gatherer v0.1'
@@ -81,6 +127,8 @@ print '%s\n' % ('=' * 78)
 if not is_file_locked('.lock'):
     print 'Script already running'
     sys.exit()
+
+lo_shot_sources = read_sources_config('config.ini')
 
 for o_shot_source in lo_shot_sources:
     o_shot_source.download_files(cons.s_TEMP_COLLECT_DIR)

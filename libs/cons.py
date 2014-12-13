@@ -6,7 +6,7 @@ import sys
 
 # Configuration - Basics
 #=======================================================================================================================
-s_TEMP_COLLECT_DIR = 'images/temp-collect'    # Directory for temporal files during collection
+s_TEMP_COLLECT_DIR = 'images/temp-historic'   # Directory for temporal files during collection
 s_HIST_DIR = 'images/historic'                # Directory for historic images
 s_HIST_EXT = 'png'                            # Historical images extension (png for quality or jpg for low size)
 s_DAT_DIR = 'dats'                            # Directory containing Id/Title dat files
