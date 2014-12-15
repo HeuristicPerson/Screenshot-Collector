@@ -51,10 +51,6 @@ def get_datetime_range(o_datetime, s_period):
         o_end = datetime.datetime(o_datetime.year - 1, 12, 31, 23, 59, 59, 999999)
 
     elif s_period == 'all':
-        # I could set fancier time limits but this is short and good enough.
-        # o_start = datetime.datetime(year=1900, month=1, day=1)
-        # o_end = datetime.datetime(year=3000, month=1, day=1)
-        #
         # A bit messy but instead of manually setting a wide enough start and finish dates, it's much better to get the
         # real oldest and newest dates from files stored in the historic folder. Later we can use them in the mosaic
         # heading.
@@ -65,20 +61,20 @@ def get_datetime_range(o_datetime, s_period):
         for s_hist_file in ls_hist_files:
             s_hist_file_name, s_hist_file_ext = fileutils.get_name_and_extension(s_hist_file)
             s_timestamp = s_hist_file_name.partition(' - ')[0]+'0000'
-            o_datetime = datetime.datetime.strptime(s_timestamp, '%Y-%m-%d %H-%M-%S.%f')
-            lo_datetimes.append(o_datetime)
+            o_file_datetime = datetime.datetime.strptime(s_timestamp, '%Y-%m-%d %H-%M-%S.%f')
+            lo_datetimes.append(o_file_datetime)
 
         lo_datetimes.sort()
         o_first_file_date = lo_datetimes[0]
-        o_last_file_date = lo_datetimes[-1]
+        o_last_date = o_datetime
 
         o_start = datetime.datetime(year=o_first_file_date.year,
                                     month=o_first_file_date.month,
                                     day=o_first_file_date.day)
 
-        o_end = datetime.datetime(year=o_last_file_date.year,
-                                  month=o_last_file_date.month,
-                                  day=o_last_file_date.day,
+        o_end = datetime.datetime(year=o_last_date.year,
+                                  month=o_last_date.month,
+                                  day=o_last_date.day,
                                   hour=23, minute=59, second=59, microsecond=999999)
 
     else:
