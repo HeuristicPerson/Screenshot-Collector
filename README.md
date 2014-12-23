@@ -168,7 +168,7 @@ as period. It should get all the images for the PREVIOUS period, but I'm not sur
 * **-db DATABASE_NAME** - Using this parameter you can create a mosaic with just the games included in certain
 database. i.e. `-database snes`.
 
-* **-id ID** - Using this parameter you can create a mosaic with just certain game ID. i.e. '-id 3eab750b'. It's
+* **-id ID** - Using this parameter you can create a mosaic with just certain game ID. i.e. `-id 3eab750b`. It's
 very unlikely that two games from different databases share the same id, but it could happen. So if you really want
 to be sure you are creating a mosaic with screenshots from just one game, you should used combined the parameters `-db`
 and `-id`.
