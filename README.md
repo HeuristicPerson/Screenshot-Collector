@@ -1,6 +1,6 @@
 # Screenshot Collector
 
-## Description
+## 0. Description
 
 *Screenshot Collector* are a couple of scripts, `collect.py` and `mosaic.py`, that allow you to collect, organize and
 show in a nice way the screenshots you take while you play video games. The only requisite is that you have access to
@@ -13,7 +13,7 @@ you can use a small [Raspberry Pi](http://www.raspberrypi.org/) (~50$ with every
 that purpose.
 
 
-## Requisites
+## 1. Requisites
 
 Main system, it should work fine in other operating systems if you are able to fullfill both requisites:
 
@@ -28,23 +28,18 @@ External Python libraries:
 2. lxml library - in Linux `sudo apt-get install python-lxml`
 
 
-## Installation and instructions of use
+## 2. Installation 
 
-Please, visit the [online wiki](https://github.com/PixelGordo/Screenshot-Collector/wiki) with the updated installation
-guide and instructions of use.
+TO DO
 
 
-## Configuration
+## 3. Configuration
 
 To configure both programs, the collector `collect.py` and the mosaic generator `mosaic.py`, you need to edit the file `config.ini` with any plain-text editor. Common programs are gedit in Linux, notepad in Windows (standard program for Mac?, no idea). 
 
 There are three different sections to configure:
 
-1. [`[collector]`](https://github.com/PixelGordo/Screenshot-Collector/wiki/Configuring-image-collector)
-2. [`[mosaic]`](https://github.com/PixelGordo/Screenshot-Collector/wiki/Configuring-mosaic-generation)
-3. [`[sources]`](https://github.com/PixelGordo/Screenshot-Collector/wiki/Configuring-screenshot-sources)
-
-### \[collector\] section
+### 3.1. \[collector\] section
 
 The basic options for screenshot collector are configured in `config.ini` file, under `[collector]` section. The typical
 aspect of that sections is:
@@ -70,9 +65,9 @@ Image manipulations are done in Screenshot Collector using [Imagemagick](www.ima
 and popular image manipulation software compatible with most image formats. So maybe you could play with other image
 formats than `png` and `jpg`.
 
-### \[mosaic\] section
+### 3.2. \[mosaic\] section
 
-### \[sources\] section
+### 3.3. \[sources\] section
 
 Screenshot sources (the places where you get the screenshots from) are configured in `config.ini` file and you can
 add as many as you want. To do so, you just need to add a `[source x]` section, where x is an integer, i.e. 0, 1,
