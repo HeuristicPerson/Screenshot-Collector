@@ -142,6 +142,53 @@ images in sub-folders of the root folder.
 the root folder after you get the images with the desired extensions (`get_exts` option) and you delete the
 files with desired extensions (`del_exts`).
 
+## 4. Game databases
+
+*Screenshot Collector* uses different game databases which relate an unique 8 character code for each game
+with its real name. Those databases are located in the folder *dats*. For example, the database for Super
+Nintendo is called snes and its beginning looks like:
+
+    # Nintendo - Super Nintendo Entertainment System - 20141025-064847
+    #=======================================================================================================================
+    #  Id       #  Title
+    #-----------------------------------------------------------------------------------------------------------------------
+    05fbb855	'96 Zenkoku Koukou Soccer Senshuken (Japan)
+    e95a3dd7	2020 Super Baseball (Japan)
+    0d77933e	2020 Super Baseball (USA)
+    f2ee11f9	3 Ninjas Kick Back (USA)
+    f0810694	3-jigen Kakutou Ballz (Japan)
+    ad4ad163	3x3 Eyes - Juuma Houkan (Japan)
+    fbf3c0ff	3x3 Eyes - Seima Kourinden (Japan)
+    9008c18a	4-nin Shougi (Japan)
+    b090235a	46 Okunen Monogatari - Harukanaru Eden e (Japan)
+    b3abdde6	7th Saga, The (USA)
+    1ad61bd0	90 Minutes - European Prime Goal (Europe)
+
+Typically, gaming emulators and other programs store the screenshots with the real game name. When
+*collect.py* tries to identify a game for a system, it checks if that title exists in the corresponding
+database and then, when saving the historic file, it adds the identification code to the filename.
+
+For example, when obtaining screenshots from Super Nintendo using ZSNES emulator, the original file
+name looks like:
+
+    Super Street Fighter II (USA)_00010.bmp
+
+And the file name after obtaining it with *collector.py* is:
+
+    2014-12-08 20-03-12.35 - snes f16d5ce9 - super street fighter ii usa.png
+
+The reason to add that extra information —the 8 character code— is the game name can change in the
+future, so it's better to store something permanent —the 8 character code—. I know it can sound
+counter-intuitive, but it happens, game names can change through time for several reasons:
+
+* You simply don't like the official name of a game. i.e. *Lara Croft: Guardians of Light* is officially
+called *Lara Croft: GoL* in xbox.com web page.
+
+* For classic games, [No-Intro project](http://no-intro.org/) is making a continuous effort to update the
+name of every ROM they verified to the most accurate one.
+
+The drawback of adding the 8 character code is Screenshot Collector is not able to work with screenshots
+for games no included in the game databases.
 
 ## Extra
 
