@@ -149,9 +149,9 @@ with its real name. Those databases are located in the folder *dats*. For exampl
 Nintendo is called snes and its beginning looks like:
 
     # Nintendo - Super Nintendo Entertainment System - 20141025-064847
-    #=======================================================================================================================
+    #===================================================================
     #  Id       #  Title
-    #-----------------------------------------------------------------------------------------------------------------------
+    #-------------------------------------------------------------------
     05fbb855	'96 Zenkoku Koukou Soccer Senshuken (Japan)
     e95a3dd7	2020 Super Baseball (Japan)
     0d77933e	2020 Super Baseball (USA)
@@ -190,12 +190,21 @@ name of every ROM they verified to the most accurate one.
 The drawback of adding the 8 character code is Screenshot Collector is not able to work with screenshots
 for games no included in the game databases.
 
-## Extra
+## 5. Extra
 
-How to properly mount a NTFS partition in Linux to avoid problems with the script
+### 5.1. How to mount a NTFS partition in Linux
+
+If you plan to use *Screenshot Collector* in a computer using Linux but you want to store the historic images
+in a NTFS partition (maybe because you want to have access to those pictures from a Windows machine), you
+need to properly mount the NTFS partition. Here it's explained how:
 
 http://ubuntuforums.org/showthread.php?t=1604251
 
-360 background ftp server that works even when playing
+### 5.2. Have access by FTP to a XBOX 360 console even when playing
+
+There is a FTP plugin for XBOX 360 consoles running Freestyle Dash that allows you to connect to the console
+even when playing. The author of the plugin says its speed is not as good as the official FTP server that
+Freestyle Dash includes but it should be more than enough to download your screenshots from the console.
 
 http://digiex.net/downloads/download-center-2-0/xbox-360-content/libxenon-homebrew-jtag-reset-glitch-content/9524-ftpdll-0-3-xbox-360-ftp-server-runs-background-dash-game.html
+
