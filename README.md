@@ -74,6 +74,80 @@ formats than `png` and `jpg`.
 
 ### \[sources\] section
 
+Screenshot sources (the places where you get the screenshots from) are configured in `config.ini` file and you can
+add as many as you want. To do so, you just need to add a `[source x]` section, where x is an integer, i.e. 0, 1,
+2... For example:
+
+    [source 0]
+    name       = Sega Megadrive
+    type       = dir
+    address    = localhost
+    root       = /home/john_doe/.Kega Fusion
+    user       =
+    password   =
+    database   = megadrive
+    scheme     = kega
+    get_exts   = tga, gif
+    del_exts   = txt
+    recursive  = no
+    clean_dirs = no
+
+The only caution you need to have is avoid the repetition of the x number. `[source 0]`, `[source 1]` and
+`[source 2]` are a right group while `[source 0]`, `[source 1]` and `[source 0]` are a wrong group.
+
+Here you can see the meaning of each parameter:
+
+* **name** - The name of the source. Use a descriptive name, it doesn't affect program functionality and it's
+just shown when you run the script. Examples of `name` are `Sega Megadrive`, `John's SNES emulator`, `Gameboy
+emulator in my laptop`...
+
+* **type** - The type of source. There are three valid types by now: `dir` for directories in the same computer
+you are running the program in, `ftp` for FTP servers and `smb` for Samba servers.
+
+* **address** - If the type of the source is `ftp` or `smb`, you indicate here the network address of the
+server. It can be an IP like `192.168.0.106` or also a domain name like `my-ftp`. For `dir` sources you don't
+need to specify any address but it's a good habit to put `localhost` just to remember it's actually located in
+the same computer that's running Screenshot Collector.
+
+* **root** - Here you specify in which folder are located the screenshots inside the *localhost* computer (for
+`dir`) or the remote server (`ftp` or `smb`). 
+
+* **user** - Name of the user for FTP and Samba servers.
+
+* **password** - Password to access the FTP and Samba servers.
+
+* **database** - Name of the database of games to use for the screenshot source. Yes, this is a mandatory field,
+Screenshot Collector only works if you have the right databases of games. Maybe the biggest drawback of the
+program... or maybe a feature. Full explanation about the subject
+[here](https://github.com/PixelGordo/Screenshot-Collector/wiki/Game-databases).
+
+* **scheme** - Every emulator or gaming system (i.e. Freestyle Dash for Xbox 360) saves screenshots with a
+different name structure. i.e. For emulator A it could be `screenshot 0123 - Super Mario World.png` while for
+emulator B it could be `Super Mario World - 01 Apr 2014.gif`. In order to convert those different naming schemes
+to the global format used for Screenshot Collector, you need to specify the source scheme. Valid schemes (by
+now, more to come in the future) are:
+
+  * `freestyledash` - An unofficial dashboard for Xbox 360  consoles with RGH/JTAG modification
+    [homepage](http://www.realmodscene.com/index.php?/forum/36-freestyle-dashboard-f3/).
+  * `kega` - An 8-16 bit SEGA consoles emulator
+    [homepage](http://www.carpeludum.com/kega-fusion/).
+  * `zsnes` - A Nintendo Super Nintendo emulator
+    [homepage](http://www.zsnes.com/).
+
+* **get_exts** - File extensions to obtain. You can select as many as you want separating them with commas.
+i.e. jpg, gif, bmp.
+
+* **del_exts** - File extensions to delete from the source. Typically, after obtaining the screenshots, you
+want to delete them from the source. Again, you can select multiple ones i.e. jpg, bmp.
+
+* **recursive**  - (yes/no) Indicates if you want to scan the root folder recursively or not, trying to find
+images in sub-folders of the root folder.
+
+* **clean_dirs** - (yes/no) Indicates if you want to delete the empty sub-folders (just the empty ones) of
+the root folder after you get the images with the desired extensions (`get_exts` option) and you delete the
+files with desired extensions (`del_exts`).
+
+
 ## Extra
 
 How to properly mount a NTFS partition in Linux to avoid problems with the script
