@@ -142,7 +142,41 @@ images in sub-folders of the root folder.
 the root folder after you get the images with the desired extensions (`get_exts` option) and you delete the
 files with desired extensions (`del_exts`).
 
-## 4. Game databases
+
+## 4. Running the script
+
+TODO
+
+## 5. Running mosaic.py from commandline
+
+Even though `collect.py` and `mosaic.py` are thought to be executed automatically by any kind of schedule launcher,
+like `cron` in Linux, `mosaic.py` can also be launched manually from commandline with extra parameter that can
+override the default behaviour of the program.
+
+The different parameters are:
+
+* **-h** - It shows the help for commandline parameters.
+
+* **-period [day, week, month, year, all]** - It indicates what's the period to consider when building the
+mosaic. For example, *day* means you want to build a mosaic with all the screenshots taken during just one
+day. In order to specify which day, you also need to use the parameter `-date`.
+
+* **-date YYYY-MM-DD** - It's the date to consider in the format Year (four digits), Month (two digits), Day
+(two digits). For example: 2014-09-23. TODO: check what happens if you specify the date for one wednesday and *week*
+as period. It should get all the images for the PREVIOUS period, but I'm not sure right now.
+
+* **-db DATABASE_NAME** - Using this parameter you can create a mosaic with just the games included in certain
+database. i.e. `-database snes`.
+
+* **-id ID** - Using this parameter you can create a mosaic with just certain game ID. i.e. '-id 3eab750b'. It's
+very unlikely that two games from different databases share the same id, but it could happen. So if you really want
+to be sure you are creating a mosaic with screenshots from just one game, you should used combined the parameters `-db`
+and `-id`.
+
+**Tip:** Use `-period all -db DATABASE_NAME -id ID` just after you finished one game to create a mosaic with all your
+adventure **;)**
+
+## 6. Game databases
 
 *Screenshot Collector* uses different game databases which relate an unique 8 character code for each game
 with its real name. Those databases are located in the folder *dats*. For example, the database for Super
@@ -190,9 +224,9 @@ name of every ROM they verified to the most accurate one.
 The drawback of adding the 8 character code is Screenshot Collector is not able to work with screenshots
 for games no included in the game databases.
 
-## 5. Extra
+## 7. Extra
 
-### 5.1. How to mount a NTFS partition in Linux
+### 7.1. How to mount a NTFS partition in Linux
 
 If you plan to use *Screenshot Collector* in a computer using Linux but you want to store the historic images
 in a NTFS partition (maybe because you want to have access to those pictures from a Windows machine), you
@@ -200,7 +234,7 @@ need to properly mount the NTFS partition. Here it's explained how:
 
 http://ubuntuforums.org/showthread.php?t=1604251
 
-### 5.2. Have access by FTP to a XBOX 360 console even when playing
+### 7.2. Have access by FTP to a XBOX 360 console even when playing
 
 There is a FTP plugin for XBOX 360 consoles running Freestyle Dash that allows you to connect to the console
 even when playing. The author of the plugin says its speed is not as good as the official FTP server that
