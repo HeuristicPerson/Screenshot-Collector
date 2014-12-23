@@ -28,6 +28,11 @@ External Python libraries:
 2. lxml library - in Linux `sudo apt-get install python-lxml`
 
 
+## Installation and instructions of use
+
+Please, visit the [online wiki](https://github.com/PixelGordo/Screenshot-Collector/wiki) with the updated installation
+guide and instructions of use.
+
 ## Extra
 
 How to properly mount a NTFS partition in Linux to avoid problems with the script
