@@ -132,4 +132,4 @@ lo_shot_sources = read_sources_config('config.ini')
 
 for o_shot_source in lo_shot_sources:
     o_shot_source.download_files(cons.s_TEMP_COLLECT_DIR)
-    o_shot_source.archive_files(cons.s_TEMP_COLLECT_DIR, cons.s_HIST_DIR)
+    o_shot_source.archive_files(cons.s_TEMP_COLLECT_DIR, cons.u_HIST_DIR)

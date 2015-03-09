@@ -48,7 +48,7 @@ class ShotSource():
         self.o_source = None               # The real source behind the MetaObject
         self.b_connected = False           # Is the source connected?
 
-        self.s_hist_ext = cons.s_HIST_EXT  # Extension for the archived screenshots
+        self.s_hist_ext = cons.u_HIST_EXT  # Extension for the archived screenshots
 
     def __str__(self):
         s_output = '%s, %s source at %s' % (self.s_name, self._s_type, self._s_host)

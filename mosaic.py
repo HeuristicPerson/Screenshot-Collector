@@ -17,7 +17,7 @@ locale.setlocale(locale.LC_ALL, 'es_ES.utf8')
 
 # Helper functions
 #=======================================================================================================================
-def get_datetime_range(o_datetime, s_period):
+def get_datetime_range(o_datetime, u_period):
     """
     Function to build the date-stamp of the previous time section. i.e. If we were working with a weekly periodicity and
     we were in the week 30 of the year 2014, the previous timestamp would be 2014-29.
@@ -30,38 +30,38 @@ def get_datetime_range(o_datetime, s_period):
     #o_date_now = datetime.datetime.now()
 
     # Grouping name configuration to create the mosaics and to check previous states
-    if s_period == 'day':
+    if u_period == u'day':
         o_yesterday = o_datetime - datetime.timedelta(days=1)
         o_start = datetime.datetime(o_yesterday.year, o_yesterday.month, o_yesterday.day, 0, 0, 0, 0)
         o_end = datetime.datetime(o_yesterday.year, o_yesterday.month, o_yesterday.day, 23, 59, 59, 999999)
 
-    elif s_period == 'week':
+    elif u_period == u'week':
         o_last_monday = o_datetime - datetime.timedelta(o_datetime.isoweekday() + 6)
         o_last_sunday = o_last_monday + datetime.timedelta(6)
         o_start = datetime.datetime(o_last_monday.year, o_last_monday.month, o_last_monday.day, 0, 0, 0, 0)
         o_end = datetime.datetime(o_last_sunday.year, o_last_sunday.month, o_last_sunday.day, 23, 59, 59, 999999)
 
-    elif s_period == 'month':
+    elif u_period == u'month':
         o_start = datetime.datetime(o_datetime.year, o_datetime.month - 1, 1, 0, 0, 0, 0)
         o_end_day = o_datetime - datetime.timedelta(days=o_datetime.day)
         o_end = datetime.datetime(o_end_day.year, o_end_day.month, o_end_day.day, 23, 59, 59, 999999)
 
-    elif s_period == 'year':
+    elif u_period == u'year':
         o_start = datetime.datetime(o_datetime.year - 1, 1, 1, 0, 0, 0, 0)
         o_end = datetime.datetime(o_datetime.year - 1, 12, 31, 23, 59, 59, 999999)
 
-    elif s_period == 'all':
+    elif u_period == u'all':
         # A bit messy but instead of manually setting a wide enough start and finish dates, it's much better to get the
         # real oldest and newest dates from files stored in the historic folder. Later we can use them in the mosaic
         # heading.
-        ls_hist_files = fileutils.get_files_in(cons.s_HIST_DIR)
+        lu_hist_files = fileutils.get_files_in(cons.u_HIST_DIR)
 
         lo_datetimes = []
 
-        for s_hist_file in ls_hist_files:
-            s_hist_file_name, s_hist_file_ext = fileutils.get_name_and_extension(s_hist_file)
-            s_timestamp = s_hist_file_name.partition(' - ')[0]+'0000'
-            o_file_datetime = datetime.datetime.strptime(s_timestamp, '%Y-%m-%d %H-%M-%S.%f')
+        for u_hist_file in lu_hist_files:
+            u_hist_file_name, u_hist_file_ext = fileutils.get_name_and_extension(u_hist_file)
+            u_timestamp = u_hist_file_name.partition(' - ')[0] + u'0000'
+            o_file_datetime = datetime.datetime.strptime(u_timestamp, u'%Y-%m-%d %H-%M-%S.%f')
             lo_datetimes.append(o_file_datetime)
 
         lo_datetimes.sort()
@@ -78,7 +78,7 @@ def get_datetime_range(o_datetime, s_period):
                                   hour=23, minute=59, second=59, microsecond=999999)
 
     else:
-        print 'ERROR: Unknown grouping period "%s"' % cons.s_PERIOD
+        print 'ERROR: Unknown grouping period "%s"' % cons.u_PERIOD
         sys.exit()
 
     return o_start, o_end
@@ -133,9 +133,9 @@ def get_images(o_start_date, o_end_date, s_db_filter='', s_id_filter=''):
 
     i_images_to_add = 0
 
-    for s_archived_image in fileutils.get_files_in(cons.s_HIST_DIR):
-        s_src_file = os.path.join(cons.s_HIST_DIR, s_archived_image)
-        s_dst_file = os.path.join(cons.s_TEMP_MOSAIC_DIR, s_archived_image)
+    for s_archived_image in fileutils.get_files_in(cons.u_HIST_DIR):
+        s_src_file = os.path.join(cons.u_HIST_DIR, s_archived_image)
+        s_dst_file = os.path.join(cons.u_TEMP_MOSAIC_DIR, s_archived_image)
 
         s_file_name, s_file_ext = fileutils.get_name_and_extension(s_archived_image)
 
@@ -206,18 +206,18 @@ def process_shots():
     print '-' * 78
 
     # Creating every tile
-    for s_image in fileutils.get_files_in(cons.s_TEMP_MOSAIC_DIR):
-        s_img_full_path = os.path.join(cons.s_TEMP_MOSAIC_DIR, s_image)
+    for s_image in fileutils.get_files_in(cons.u_TEMP_MOSAIC_DIR):
+        s_img_full_path = os.path.join(cons.u_TEMP_MOSAIC_DIR, s_image)
         s_file_name, s_file_ext = fileutils.get_name_and_extension(s_image)
 
         s_db = s_file_name.split(' - ')[1].partition(' ')[0].strip()
         s_id = s_file_name.split(' - ')[1].partition(' ')[2].strip()
 
-        if o_game_db is None or o_game_db._s_name != s_db:
+        if o_game_db is None or o_game_db._u_name != s_db:
             s_db_file = os.path.join(cons.s_DAT_DIR, '%s.txt' % s_db)
             o_game_db = gamecache.Database(s_db_file)
 
-        s_title = o_game_db.get_title_by_id(s_id)
+        u_title = o_game_db.get_title_by_id(s_id)
 
         s_commandline = 'convert "%s" ' \
                         '-background %s -resize %s -gravity center -extent %s ' \
@@ -226,36 +226,37 @@ def process_shots():
                         '-gravity south -splice 0x%i ' \
                         '"%s"' \
                         % (s_img_full_path,
-                           cons.s_TILE_BACKGROUND, cons.s_TILE_SIZE, cons.s_TILE_SIZE,
-                           cons.s_TILE_FOOTER_COLOR, cons.s_TILE_FOOTER_FONT, cons.i_TILE_FOOTER_SIZE,
-                           cons.s_TILE_SIZE.split('x')[0], s_title,
+                           cons.u_TILE_BACKGROUND, cons.u_TILE_SIZE, cons.u_TILE_SIZE,
+                           cons.u_TILE_FOOTER_COLOR, cons.s_TILE_FOOTER_FONT, cons.i_TILE_FOOTER_SIZE,
+                           cons.u_TILE_SIZE.split('x')[0],
+                           u_title.encode('utf8', 'strict'),
                            cons.i_TILE_BOTTOM_MARGIN,
                            s_img_full_path)
 
         os.system(s_commandline)
 
-        print 'Got: %s  %s --> %s' % (s_db, s_id, s_title)
+        print 'Got: %s  %s --> %s' % (s_db, s_id, u_title)
 
 
-def compose_shots(s_title, s_file):
+def compose_shots(u_title, s_file):
     """
     Function to
-    :param s_title:
+    :param u_title:
     :param s_file:
     :return:
     """
 
     # TODO: Modify this function to show in the heading something different when filtering by db and game id
 
-    ls_files = fileutils.get_files_in(cons.s_TEMP_MOSAIC_DIR)
+    ls_files = fileutils.get_files_in(cons.u_TEMP_MOSAIC_DIR)
     i_files = len(ls_files)
 
     print '\nCreating mosaic'
     print '-' * 78
-    print 'Top: %s' % s_title
+    print 'Top: %s' % u_title
 
-    s_src_images = os.path.join(cons.s_TEMP_MOSAIC_DIR, '*.%s' % cons.s_HIST_EXT)
-    s_mosaic_file = os.path.join(cons.s_HIST_MOSAIC_DIR, '%s.jpg' % s_file)
+    s_src_images = os.path.join(cons.u_TEMP_MOSAIC_DIR, '*.%s' % cons.u_HIST_EXT)
+    s_mosaic_file = os.path.join(cons.u_HIST_MOSAIC_DIR, '%s.jpg' % s_file)
 
     if i_files == 0:
         print 'Img: 0 files, mosaic not created'
@@ -264,7 +265,7 @@ def compose_shots(s_title, s_file):
     else:
         print 'Img: %i' % i_files
         s_commandline = 'montage "%s" -geometry +2+2 -tile %ix -background %s "%s"' % (s_src_images,cons.i_TILE_WIDTH,
-                                                                             cons.s_TILE_BACKGROUND,
+                                                                             cons.u_TILE_BACKGROUND,
                                                                              s_mosaic_file)
         os.system(s_commandline)
 
@@ -274,14 +275,17 @@ def compose_shots(s_title, s_file):
                         '-fill %s -font "%s" -pointsize %i label:\'%s\' +swap -gravity Center -append ' \
                         '"%s"'\
                         % (s_mosaic_file,
-                           cons.s_TILE_BACKGROUND,
-                           cons.s_MOSAIC_HEADING_COLOR, cons.s_MOSAIC_HEADING_FONT, cons.i_MOSAIC_HEADING_SIZE, s_title,
+                           cons.u_TILE_BACKGROUND,
+                           cons.u_MOSAIC_HEADING_COLOR,
+                           cons.s_MOSAIC_HEADING_FONT,
+                           cons.i_MOSAIC_HEADING_SIZE,
+                           u_title.encode('utf8', 'strict'),
                            s_mosaic_file)
         os.system(s_commandline)
 
         print 'Siz: %s' % fileutils.human_size(fileutils.get_size_of(s_mosaic_file))
 
-        fileutils.clean_dir(cons.s_TEMP_MOSAIC_DIR)
+        fileutils.clean_dir(cons.u_TEMP_MOSAIC_DIR)
 
     return s_mosaic_file
 
@@ -321,14 +325,14 @@ def demo_tweet(s_image, s_period):
         ds_text = {'en': 'This is what I played since I started using #ScreenshotCollector',
                    'es': 'A ésto he jugado desde que estoy usando #ScreenshotCollector'}
     else:
-        print 'ERROR: unknown time period "%s"' % cons.s_PERIOD
+        print 'ERROR: unknown time period "%s"' % cons.u_PERIOD
         sys.exit()
 
     # Sending the tweet
-    # pgtweet.post(ds_text[cons.s_LANG], s_image)
+    # pgtweet.post(ds_text[cons.u_LANG], s_image)
 
     # Printing information to screen
-    print 'Txt: %s' % ds_text[cons.s_LANG]
+    print 'Txt: %s' % ds_text[cons.u_LANG]
     print 'Img: %s' % s_image
 
 
@@ -344,7 +348,7 @@ def get_cmdline_options():
     o_arg_parser = argparse.ArgumentParser()
     o_arg_parser.add_argument('-period',
                               action='store',
-                              default=cons.s_PERIOD,
+                              default=cons.u_PERIOD,
                               choices=('day', 'week', 'month', 'year', 'all'),
                               required=False,
                               help='Periodicity of the mosaic. i.e. the period of time the images belong to')
@@ -406,13 +410,13 @@ process_shots()
 o_half_period = (o_end_date - o_start_date) / 2
 o_mid_date = o_start_date + datetime.timedelta(seconds=o_half_period.total_seconds())
 
-s_heading = get_period_human_name(o_mid_date, s_period)
-s_file_name = get_mosaic_file_name(o_start_date, o_mid_date, o_end_date, s_period)
+u_heading = get_period_human_name(o_mid_date, s_period)
+u_file_name = get_mosaic_file_name(o_start_date, o_mid_date, o_end_date, s_period)
 
 # With the required information, the mosaic can be built and saved to disk.
-s_mosaic_file = compose_shots(s_heading, s_file_name)
+u_mosaic_file = compose_shots(u_heading, u_file_name)
 
 # Example of posting the created mosaic to twitter
-if s_mosaic_file != '':
-    demo_tweet(s_mosaic_file, s_period)
+if u_mosaic_file != '':
+    demo_tweet(u_mosaic_file, s_period)
 
