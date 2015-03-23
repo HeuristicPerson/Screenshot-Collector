@@ -130,16 +130,16 @@ for Screenshot Collector, you need to specify the source scheme. Valid schemes (
   * `zsnes` - A Nintendo Super Nintendo emulator
     [homepage](http://www.zsnes.com/).
 
-* **get_exts** - File extensions to obtain. You can select as many as you want separating them with commas. i.e. jpg,
-gif, bmp.
+* **get_exts** - File extensions to obtain. You can select as many as you want separating them with commas. i.e. `jpg,
+gif, bmp`.
 
 * **del_exts** - File extensions to delete from the source. Typically, after obtaining the screenshots, you want to
-delete them from the source. Again, you can select multiple ones i.e. jpg, bmp.
+delete them from the source. Again, you can select multiple ones i.e. `jpg, bmp`.
 
-* **recursive**  - (yes/no) Indicates if you want to scan the root folder recursively or not, trying to find images in
+* **recursive**  - (`yes`/`no`) Indicates if you want to scan the root folder recursively or not, trying to find images in
 sub-folders of the root folder.
 
-* **clean_dirs** - (yes/no) Indicates if you want to delete the empty sub-folders (just the empty ones) of the root
+* **clean_dirs** - (`yes`/`no`) Indicates if you want to delete the empty sub-folders (just the empty ones) of the root
 folder after you get the images with the desired extensions (`get_exts` option) and you delete the files with desired
 extensions (`del_exts`).
 
