@@ -164,7 +164,7 @@ example, *day* means you want to build a mosaic with all the screenshots taken d
 which day, you also need to use the parameter `-date`.
 
 * **-date YYYY-MM-DD** - It's the date to consider in the format Year (four digits), Month (two digits), Day (two
-digits). For example: 2014-09-23. TODO: check what happens if you specify the date for one wednesday and *week* as
+digits). i.e. `-date 2014-09-23`. TODO: check what happens if you specify the date for one wednesday and *week* as
 period. It should get all the images for the PREVIOUS period, but I'm not sure right now.
 
 * **-db DATABASE_NAME** - Using this parameter you can create a mosaic with just the games included in certain database.
