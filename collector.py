@@ -45,72 +45,74 @@ def read_sources_config(s_file):
     :return:
     """
 
-    o_ini = ini.ParsedIni(s_file)
+    o_ini = ini.ParsedIni()
+    o_ini.load_from_disk(s_file)
 
     # Reading sources configuration
     lo_sources = []
 
-    for dx_section in o_ini:
-        s_section = dx_section['section'].split(' ')[0]
-        ds_values = dx_section['values']
-        if s_section == 'source':
+    for o_section in o_ini:
+        # Source sections of the ini contain a number, i.e. [source 1]. So we need to check if the 1st part is source
+        # before obtaining the data
+        u_section_type = o_section.u_name.split(' ')[0]
+
+        if u_section_type == u'source':
 
             # Obtaining information from parsed ini file
-            s_type = ds_values.get('type', '')
-            if s_type not in ('dir', 'ftp', 'smb'):
-                print 'config.ini error: unknown or missing source type "%s"' % s_type
-                sys.exit()
+            u_type = o_ini.get_param(o_section.u_name, u'type')
+            if u_type not in (u'dir', u'ftp', u'smb'):
+                raise Exception('config.ini error: unknown or missing source type "%s"'
+                                % u_type.encode('ascii', 'strict'))
 
-            s_address = ds_values.get('address', '')
-            if s_address == '':
-                print 'config.ini error: unknown or missing address "%s"' % s_address
-                sys.exit()
+            u_address = o_ini.get_param(o_section.u_name, u'address')
+            if u_address == u'':
+                raise Exception('config.ini error: unknown or missing address "%s"'
+                                % u_address.encode('ascii', 'strict'))
 
-            s_root = ds_values.get('root', '')
+            u_root = o_ini.get_param(o_section.u_name, u'root')
+            u_user = o_ini.get_param(o_section.u_name, u'user')
+            u_password = o_ini.get_param(o_section.u_name, u'password')
 
-            s_user = ds_values.get('user', '')
+            u_database = o_ini.get_param(o_section.u_name, u'database')
+            if u_database == u'':
+                raise Exception('config.ini error: unknown or missing database "%s"'
+                                % u_database.encode('ascii', 'strict'))
 
-            s_password = ds_values.get('password', '')
+            u_scheme = o_ini.get_param(o_section.u_name, u'scheme')
+            if u_scheme == u'':
+                raise Exception('config.ini error: unknown or missing database "%s"'
+                                % u_scheme.encode('ascii', 'strict'))
 
-            s_database = ds_values.get('database', '')
-            if s_database == '':
-                print 'config.ini error: unknown or missing database "%s"' % s_database
-                sys.exit()
+            lu_get_exts = ini.list_str(o_ini.get_param(o_section.u_name, u'get_exts'))
+            if len(lu_get_exts) == 0:
+                raise Exception('config.ini warning: not getting any extension from source "%s"'
+                                % o_section.u_name)
 
-            s_scheme = ds_values.get('scheme', '')
-            if s_scheme == '':
-                print 'config.ini error: unknown or missing database "%s"' % s_scheme
-                sys.exit()
+            lu_del_exts = ini.list_str(o_ini.get_param(o_section.u_name, u'del_exts'))
 
-            ls_get_exts = ini.list_str(ds_values.get('get_exts', ''))
-            if len(ls_get_exts) == 0:
-                print 'config.ini warning: not getting any extension from source "%s"' % dx_section['section']
-
-            ls_del_exts = ini.list_str(ds_values.get('del_exts', ''))
-
-            s_recursive = ds_values.get('recursive', '')
-            if s_recursive.lower() in ('yes', 'true', '1'):
+            u_recursive = o_ini.get_param(o_section.u_name, u'recursive')
+            if u_recursive.lower() in ('yes', 'true', '1'):
                 b_recursive = True
             else:
                 b_recursive = False
 
-            s_clean = ds_values.get('clean_dirs', '')
-            if s_recursive.lower() in ('yes', 'true', '1'):
+            u_clean = o_ini.get_param(o_section.u_name, u'clean_dirs')
+            if u_recursive.lower() in ('yes', 'true', '1'):
                 b_clean = True
             else:
                 b_clean = True
 
             # With all the required data, the source can be configured
-            o_source = shotsource.ShotSource(ds_values.get('name', dx_section['section']))
+            o_source = shotsource.ShotSource(o_ini.get_param(o_section.u_name, u'name'))
 
-            o_source.set_source(s_type, s_address, s_root)
-            o_source.set_user_pass(s_user, s_password)         # User and pass for FTP or SAMBA
+            o_source.set_source(u_type, u_address, u_root)      # Type of source, address, and root folder
+            o_source.set_user_pass(u_user, u_password)          # User and pass for FTP or SAMBA
 
-            o_source.set_db_and_scheme(s_database, s_scheme)   # Name of the DB and source screenshot scheme
-            o_source.set_get_exts(*ls_get_exts)                 # File extensions to download_file from source
-            o_source.set_del_exts(*ls_del_exts)                 # File extensions to remove from source
+            o_source.set_db_and_scheme(u_database, u_scheme)    # Name of the DB and source screenshot scheme
+            o_source.set_get_exts(*lu_get_exts)                 # File extensions to download_file from source
+            o_source.set_del_exts(*lu_del_exts)                 # File extensions to remove from source
             if b_recursive:
-                o_source.set_recursive()                       # Searching for images recursively
+                o_source.set_recursive()                        # Searching for images recursively
             if b_clean:
                 o_source.set_clean_dirs()
 
@@ -128,8 +130,12 @@ if not is_file_locked('.lock'):
     print 'Script already running'
     sys.exit()
 
+# TODO: add command line parameters to allow the user to run the collector for just one system.
+# Apart from for testing purposes, it'll be also helpful to solve issues with mixed screenshots in the temporary
+# collection folder.
+
 lo_shot_sources = read_sources_config('config.ini')
 
 for o_shot_source in lo_shot_sources:
-    o_shot_source.download_files(cons.s_TEMP_COLLECT_DIR)
-    o_shot_source.archive_files(cons.s_TEMP_COLLECT_DIR, cons.u_HIST_DIR)
+    o_shot_source.download_files(cons.u_TEMP_COLLECT_DIR)
+    o_shot_source.archive_files(cons.u_TEMP_COLLECT_DIR, cons.u_HIST_DIR)

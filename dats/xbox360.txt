@@ -2,29 +2,22 @@
 #=======================================================================================================================
 #  Id       #  Title
 #-----------------------------------------------------------------------------------------------------------------------
-584108cE	Braid
-584108b7	Castle Crashers
-58410a79	Costume Quest
-454109db	FIFA 15
-5553088c	Far Cry 3
-45410915	Fight Night Champion
 4d5309c9	Forza Horizon
 00000000	Freestyle Dash
 58411446	Guacamelee! STCE
+58410878	Ikaruga
 584109d1	LIMBO
 58410a59	Lara Croft: GoL
 415607e6	Modern Warfare
 555308c3	Rayman Legends
+58411234	SINE MORA
 454108e6	Skate 3
-53450815	Sonic & SEGA Racing
-58410a73	Stacking
-584113c7	Strider
+584109be	Spelunky
 58410a5a	Super Meat Boy
-434307fc	Super Street Fighter IV Arcade Edition
+434307fc	Super StreetFighter IV Arcade Edition
 58411238	The Cave
-555308c5	The Stick of Truth
 58411216	The Wolf Among Us
+58411463	Toybox Turbos
 58410aad	Trials Evolution
 58411401	Trials Fusion
-5841095a	Trials HD
 58411428	Valiant Hearts

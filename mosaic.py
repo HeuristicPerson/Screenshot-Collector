@@ -206,43 +206,52 @@ def process_shots():
     print '-' * 78
 
     # Creating every tile
-    for s_image in fileutils.get_files_in(cons.u_TEMP_MOSAIC_DIR):
-        s_img_full_path = os.path.join(cons.u_TEMP_MOSAIC_DIR, s_image)
-        s_file_name, s_file_ext = fileutils.get_name_and_extension(s_image)
+    for u_image in fileutils.get_files_in(cons.u_TEMP_MOSAIC_DIR):
+        u_img_full_path = os.path.join(cons.u_TEMP_MOSAIC_DIR, u_image)
+        u_file_name, u_file_ext = fileutils.get_name_and_extension(u_image)
 
-        s_db = s_file_name.split(' - ')[1].partition(' ')[0].strip()
-        s_id = s_file_name.split(' - ')[1].partition(' ')[2].strip()
+        u_db = u_file_name.split(' - ')[1].partition(' ')[0].strip()
+        u_id = u_file_name.split(' - ')[1].partition(' ')[2].strip()
 
-        if o_game_db is None or o_game_db._u_name != s_db:
-            s_db_file = os.path.join(cons.s_DAT_DIR, '%s.txt' % s_db)
-            o_game_db = gamecache.Database(s_db_file)
+        if o_game_db is None or o_game_db.u_name != u_db:
+            u_db_file = os.path.join(cons.u_DAT_DIR, '%s.txt' % u_db)
+            o_game_db = gamecache.Database(u_db_file)
 
-        u_title = o_game_db.get_title_by_id(s_id)
+        u_title = o_game_db.get_title_by_id(u_id)
 
-        s_commandline = 'convert "%s" ' \
-                        '-background %s -resize %s -gravity center -extent %s ' \
-                        '-fill %s -font "%s" -pointsize %i ' \
-                        '-size %sx caption:\'%s\' -gravity Center -append ' \
-                        '-gravity south -splice 0x%i ' \
-                        '"%s"' \
-                        % (s_img_full_path,
-                           cons.u_TILE_BACKGROUND, cons.u_TILE_SIZE, cons.u_TILE_SIZE,
-                           cons.u_TILE_FOOTER_COLOR, cons.s_TILE_FOOTER_FONT, cons.i_TILE_FOOTER_SIZE,
-                           cons.u_TILE_SIZE.split('x')[0],
-                           u_title.encode('utf8', 'strict'),
-                           cons.i_TILE_BOTTOM_MARGIN,
-                           s_img_full_path)
+        u_commandline = u''
+        u_commandline += u'convert "%s" ' % u_img_full_path                      # Source image
 
-        os.system(s_commandline)
+        # Resizing
+        u_commandline += u'-background %s ' % cons.u_TILE_BACKGROUND             # Setting the background color
+        u_commandline += u'-resize %s ' % cons.u_TILE_SIZE                       # Resize the image respecting the ratio
+        u_commandline += u'-gravity center -extent %s ' % cons.u_TILE_SIZE       # Resize the canvas to the full size
 
-        print 'Got: %s  %s --> %s' % (s_db, s_id, u_title)
+        # Game title at the bottom of each picture
+        u_commandline += u'-fill %s ' % cons.u_TILE_FOOTER_COLOR                 # Setting the color for the font
+        u_commandline += u'-font "%s" ' % cons.u_TILE_FOOTER_FONT                # Setting the font family
+        u_commandline += u'-pointsize %i ' % cons.i_TILE_FOOTER_SIZE             # Setting the font size
+
+        u_commandline += u'-size %sx ' % cons.u_TILE_SIZE.split(u'x')[0]         # Increasing bottom image thickness
+        u_commandline += u'caption:"%s" ' % u_title#.replace(u'\'', u'')
+        u_commandline += u'-gravity center -append '
+        u_commandline += u'-gravity south -splice 0x%i ' % cons.i_TILE_BOTTOM_MARGIN  # Extra margin at the botton of
+                                                                                      # the caption
+
+        # Setting the destination file
+        u_commandline += u'"%s"' % u_img_full_path                               # Destination file
+
+        os.system(u_commandline.encode('utf8', 'ignore'))
+        #print u_commandline.encode('utf8', 'ignore')
+
+        print 'Got: %s  %s --> %s' % (u_db, u_id, u_title)
 
 
-def compose_shots(u_title, s_file):
+def compose_shots(u_title, u_file):
     """
     Function to
     :param u_title:
-    :param s_file:
+    :param u_file:
     :return:
     """
 
@@ -253,41 +262,54 @@ def compose_shots(u_title, s_file):
 
     print '\nCreating mosaic'
     print '-' * 78
-    print 'Top: %s' % u_title
+    print 'Top: %s' % u_title.encode('utf8', 'strict')
 
-    s_src_images = os.path.join(cons.u_TEMP_MOSAIC_DIR, '*.%s' % cons.u_HIST_EXT)
-    s_mosaic_file = os.path.join(cons.u_HIST_MOSAIC_DIR, '%s.jpg' % s_file)
+    u_src_images = os.path.join(cons.u_TEMP_MOSAIC_DIR, u'*.%s' % cons.u_HIST_EXT)
+    u_mosaic_file = os.path.join(cons.u_HIST_MOSAIC_DIR, u'%s.jpg' % u_file)
 
     if i_files == 0:
         print 'Img: 0 files, mosaic not created'
-        s_mosaic_file = ''
+        u_mosaic_file = ''
 
     else:
         print 'Img: %i' % i_files
-        s_commandline = 'montage "%s" -geometry +2+2 -tile %ix -background %s "%s"' % (s_src_images,cons.i_TILE_WIDTH,
-                                                                             cons.u_TILE_BACKGROUND,
-                                                                             s_mosaic_file)
-        os.system(s_commandline)
+        u_cmd = u''
+        u_cmd += u'montage "%s" ' % u_src_images
+        u_cmd += u'-geometry +2+2 '                              # Adding a small margin around the images
+        u_cmd += u'-tile %ix ' % cons.i_TILE_WIDTH               # Defining the number of columns
+        u_cmd += u'-background %s ' % cons.u_TILE_BACKGROUND     # Background color
+        u_cmd += u'"%s"' % u_mosaic_file                         # Output file
+
+        os.system(u_cmd.encode('utf8', 'strict'))
 
         # Adding an extra title at the top of the image
-        s_commandline = 'convert "%s" ' \
-                        '-background %s ' \
-                        '-fill %s -font "%s" -pointsize %i label:\'%s\' +swap -gravity Center -append ' \
-                        '"%s"'\
-                        % (s_mosaic_file,
-                           cons.u_TILE_BACKGROUND,
-                           cons.u_MOSAIC_HEADING_COLOR,
-                           cons.s_MOSAIC_HEADING_FONT,
-                           cons.i_MOSAIC_HEADING_SIZE,
-                           u_title.encode('utf8', 'strict'),
-                           s_mosaic_file)
-        os.system(s_commandline)
+        u_cmd = u''
+        u_cmd += u'convert "%s" ' % u_mosaic_file
+        u_cmd += u'-background %s ' % cons.u_TILE_BACKGROUND
+        u_cmd += u'-fill %s ' % cons.u_MOSAIC_HEADING_COLOR      # Font color
+        u_cmd += u'-font "%s" ' % cons.u_MOSAIC_HEADING_FONT     # Font family
+        u_cmd += u'-pointsize %i ' % cons.i_MOSAIC_HEADING_SIZE  # Font size
+        u_cmd += u'label:\'%s\'' % u_title                       # Title of the mosaic
+        u_cmd += u'+swap -gravity Center -append '               # Layering composition
+        u_cmd += u'"%s"'                                         # Output file
 
-        print 'Siz: %s' % fileutils.human_size(fileutils.get_size_of(s_mosaic_file))
+        #                ' +swap -gravity Center -append ' \
+        #                '"%s"'\
+        #                % (u_mosaic_file,
+        #                   cons.u_TILE_BACKGROUND,
+        #                   cons.u_MOSAIC_HEADING_COLOR,
+        #                   cons.u_MOSAIC_HEADING_FONT,
+        #                   cons.i_MOSAIC_HEADING_SIZE,
+        #                   u_title.encode('utf8', 'strict'),
+        #                   u_mosaic_file)
+
+        os.system(u_cmd.encode('utf8', 'strict'))
+
+        print 'Siz: %s' % fileutils.human_size(fileutils.get_size_of(u_mosaic_file))
 
         fileutils.clean_dir(cons.u_TEMP_MOSAIC_DIR)
 
-    return s_mosaic_file
+    return u_mosaic_file
 
 
 def demo_tweet(s_image, s_period):

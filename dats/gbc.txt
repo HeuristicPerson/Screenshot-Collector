@@ -2,11 +2,6 @@
 #=======================================================================================================================
 #  Id       #  Title
 #-----------------------------------------------------------------------------------------------------------------------
-e038e666	007 - The World Is Not Enough (USA, Europe)
-5449cac0	10-Pin Bowling (Europe)
-720c7023	10-Pin Bowling (USA)
-f2128908	102 Dalmatas - Cachorros Al Rescate (Spain)
-56b83539	102 Dalmatians - Puppies to the Rescue (USA, Europe)
 e84191a8	102 Dalmatiens a la Rescousse, Les (France)
 725a3483	102 Dalmatiner (Germany)
 87431672	1942 (USA, Europe)

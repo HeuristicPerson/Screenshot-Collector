@@ -11,14 +11,17 @@ import requests
 import lxml.html
 
 
-def get_title_by_id(s_system, s_id):
-    if s_system == 'xbox360':
-        s_output = _xbox360(s_id)
+def get_title_by_id(u_system, u_id):
+
+    u_output = u'________'
+
+    if u_system == u'xbox360':
+        u_output = _xbox360(u_id)
 
     else:
-        s_output = 'unknown scrapper'
+        print 'Online scrapper for "%s" doesn\'t exist, returning "________" title'
 
-    return s_output
+    return u_output
 
 
 def _xbox360(s_id):
