@@ -19,7 +19,7 @@ Main system, it should work fine in other operating systems if you are able to f
 
 1. **Python 2.x** installed. You can do it in **Linux**, **OSX**, **Windows**... 
 2. **Imagemagick** installed and added to the PATH of the system so you can call it from wherever you want.
-
+3. **smbclient** installed (I think it's just for Linux so I should use a more generic Python library in the future).
 
 
 External Python libraries:
@@ -229,7 +229,24 @@ included in the game databases.
 
 ## 7. Extra
 
-### 7.1. How to mount a NTFS partition in Linux
+### 7.1. TODO
+
+* Some way of storing and adding comments to screenshots that, later, could be included into the posters.
+
+### 7.2. Version history
+
+**v0.1**
+
+* Initial release
+
+**v0.2**
+
+* Samba folders support.
+* Minor bugs fixed
+* Better support UTF8 "weird" characters. i.e. ™ and ®. Anyway they look really ugly and you should want to remove them
+  from your game databases **;)**
+
+### 7.2. How to mount a NTFS partition in Linux
 
 If you plan to use *Screenshot Collector* in a computer using Linux but you want to store the historic images in a NTFS
 partition (maybe because you want to have access to those pictures from a Windows machine), you need to properly mount
@@ -238,7 +255,7 @@ the NTFS partition. Here it's explained how:
 http://ubuntuforums.org/showthread.php?t=1604251
 
 
-### 7.2. Have access by FTP to a XBOX 360 console even when playing
+### 7.3. Have access by FTP to a XBOX 360 console even when playing
 
 There is a FTP plugin for XBOX 360 consoles running Freestyle Dash that allows you to connect to the console even when
 playing. The author of the plugin says its speed is not as good as the official FTP server that Freestyle Dash includes

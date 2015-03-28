@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
-
 #=======================================================================================================================
 # Library for parsing ini files
 #=======================================================================================================================
+# This is the last time I include and modify my ini parsing library in one of my projects. I definitely need to build a
+# general purpose python package.
+#-----------------------------------------------------------------------------------------------------------------------
 
 import os
-import sys
 
 
 class ParsedIni:
@@ -59,27 +60,13 @@ class ParsedIni:
         if o_section.number_of_params() > 0:
             self._do_sections[u_section] = o_section
 
-    def import_from_ini(self, o_new_ini):
-        """
-        Method to import the content of other ParsedIni object
-
-        :param o_new_ini: ParsedIni object to import.
-
-        :return: NOthing
-        """
-
-        for o_new_section in o_new_ini:
-            for d_new_param in o_new_section:
-                #print o_new_section.u_name, d_new_param
-                self.set_param(o_new_section.u_name, d_new_param['name'], d_new_param['value'])
-
     def load_from_disk(self, u_file):
         """
         Function to parse an ini file. All the information will be read as plain text, so, after using this object, you
         should convert the strings to integers, floats, etc... in case you needed the information in those formats.
 
         Notice this method ignores all the comments contained in the file. This means you'll lose permanently all the
-        coments if you save the ParsedIni to the same ini file you read in first place.
+        comments if you save the ParsedIni to the same ini file you read in first place.
 
         :param u_file: file object where the information is gathered from.o_file
 
@@ -96,7 +83,7 @@ class ParsedIni:
             o_file = open(u_file, 'r')
 
             # Initialization
-            u_section = ''
+            u_section = u''
             o_section = _IniSection(u_section)
 
             for u_line in o_file:
@@ -137,23 +124,23 @@ class ParsedIni:
             # After processing all the lines, we append the
             self._add_section(u_section, o_section)
 
-    def get_param(self, s_section, s_param):
+    def get_param(self, u_section, u_param):
         """
         Method for reading the value of a field inside a section.
 
-        :param s_section: Name of the section, identified by square brackets. i.e. For '[menu]', s_section = 'menu'.
-            NOTE: s_section is NOT case sensitive. i.e. 'main' and 'Main' are the same section.
+        :param u_section: Name of the section, identified by square brackets. i.e. For '[menu]', u_section = 'menu'.
+            NOTE: u_section is NOT case sensitive. i.e. 'main' and 'Main' are the same section.
 
-        :param s_field: Name of the field, just before =. i.e. For 'stars = 10', s_field = 'stars'. NOTE: s_field is NOT
+        :param u_param: Name of the field, just before =. i.e. For 'stars = 10', s_field = 'stars'. NOTE: s_field is NOT
             case sensitive. i.e. 'Start' and 'start' are the same field.
 
-        :return s_output: Value after =. i.e. For 'stars = 10', s_output = '10' NOTICE IT'S ALWAYS A STRING!
+        :return u_output: Value after =. i.e. For 'stars = 10', s_output = '10' NOTICE IT'S ALWAYS A STRING!
         """
 
         u_output = None
 
-        if self.has_param(s_section, s_param):
-            u_output = self._do_sections[s_section].get_param(s_param)
+        if self.has_param(u_section, u_param):
+            u_output = self._do_sections[u_section].get_param(u_param)
 
         return u_output
 
@@ -204,25 +191,6 @@ class ParsedIni:
 
         # Then, we don't need to check if the parameter exist. We simply add it's value to the dict.
         self._do_sections[u_section].add_param(u_param, u_value)
-
-    def write_to_disk(self, u_file):
-        """
-        Method to write the ParsedIni object to disk as a standard ini file.
-
-        :param u_file: Name of the file. i.e. '/home/john/my_config.ini'
-
-        :return: Nothing
-        """
-
-        o_output_file = open(u_file, 'w')
-
-        for o_section in self:
-            o_output_file.write('[%s]\n' % o_section.u_name)
-            for du_param in o_section:
-                o_output_file.write('%s = %s\n' % (du_param['name'], du_param['value']))
-            o_output_file.write('\n')
-
-        o_output_file.close()
 
 
 class _IniSection:

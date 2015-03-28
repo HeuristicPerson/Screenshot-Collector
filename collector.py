@@ -13,10 +13,11 @@ screenshot footer.
 
 
 import fcntl
+import os
 import sys
 
-from libs import cons
 from libs import ini
+from libs import scr
 from libs import shotsource
 
 
@@ -38,6 +39,34 @@ def is_file_locked(s_file):
     return True
 
 
+def read_collector_config(u_file):
+    """
+    Function to read the main configuration for the collector tool from disk.
+    :param s_file:
+    :return:
+    """
+
+    o_ini = ini.ParsedIni()
+    o_ini.load_from_disk(u_file)
+
+    u_temp_dir = o_ini.get_param('collector', 'temp_dir')
+    u_hist_dir = o_ini.get_param('collector', 'hist_dir')
+    u_hist_ext = o_ini.get_param('collector', 'hist_ext')
+
+
+    if not os.path.isdir(u_temp_dir):
+        print 'Temporary collector directory doesn\'t exist:'
+        print '   %s' % u_temp_dir.encode('utf8', 'strict')
+        sys.exit()
+
+    if not os.path.isdir(u_hist_dir):
+        print 'Historic directory doesnt\'t exist:'
+        print '    %s' % u_hist_dir.encode('utf8', 'strict')
+        sys.exit()
+
+    return u_temp_dir, u_hist_dir, u_hist_ext
+
+
 def read_sources_config(s_file):
     """
     Function to load the
@@ -47,6 +76,8 @@ def read_sources_config(s_file):
 
     o_ini = ini.ParsedIni()
     o_ini.load_from_disk(s_file)
+
+    u_hist_ext = o_ini.get_param('collector', 'hist_ext')
 
     # Reading sources configuration
     lo_sources = []
@@ -97,7 +128,7 @@ def read_sources_config(s_file):
                 b_recursive = False
 
             u_clean = o_ini.get_param(o_section.u_name, u'clean_dirs')
-            if u_recursive.lower() in ('yes', 'true', '1'):
+            if u_clean.lower() in ('yes', 'true', '1'):
                 b_clean = True
             else:
                 b_clean = True
@@ -105,14 +136,17 @@ def read_sources_config(s_file):
             # With all the required data, the source can be configured
             o_source = shotsource.ShotSource(o_ini.get_param(o_section.u_name, u'name'))
 
+            o_source.u_hist_ext = u_hist_ext                    # Historical extension
+
             o_source.set_source(u_type, u_address, u_root)      # Type of source, address, and root folder
             o_source.set_user_pass(u_user, u_password)          # User and pass for FTP or SAMBA
 
             o_source.set_db_and_scheme(u_database, u_scheme)    # Name of the DB and source screenshot scheme
             o_source.set_get_exts(*lu_get_exts)                 # File extensions to download_file from source
             o_source.set_del_exts(*lu_del_exts)                 # File extensions to remove from source
-            if b_recursive:
-                o_source.set_recursive()                        # Searching for images recursively
+
+            if b_recursive:                                     # Searching for images recursively
+                o_source.set_recursive()
             if b_clean:
                 o_source.set_clean_dirs()
 
@@ -123,8 +157,8 @@ def read_sources_config(s_file):
 
 # Main code
 #=======================================================================================================================
-print 'Screenshot gatherer v0.1'
-print '%s\n' % ('=' * 78)
+scr.printh(u'Screenshot Collector v0.2', 1)
+print
 
 if not is_file_locked('.lock'):
     print 'Script already running'
@@ -134,8 +168,15 @@ if not is_file_locked('.lock'):
 # Apart from for testing purposes, it'll be also helpful to solve issues with mixed screenshots in the temporary
 # collection folder.
 
+u_temp_dir, u_hist_dir, u_hist_ext = read_collector_config('config.ini')
+
 lo_shot_sources = read_sources_config('config.ini')
 
 for o_shot_source in lo_shot_sources:
-    o_shot_source.download_files(cons.u_TEMP_COLLECT_DIR)
-    o_shot_source.archive_files(cons.u_TEMP_COLLECT_DIR, cons.u_HIST_DIR)
+    u_message = 'SOURCE: %s (%s, %s)' % (o_shot_source.u_name,
+                                         o_shot_source.u_type,
+                                         o_shot_source.u_host)
+    scr.printh(u_message, 1)
+
+    o_shot_source.download_files(u_temp_dir)
+    o_shot_source.archive_files(u_temp_dir, u_hist_dir)

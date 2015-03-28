@@ -9,13 +9,14 @@ Library to handle in a common way different sources (ftp, dirs and samba dirs) f
 import datetime
 import ftplib
 import os
-import smbc             # Library to work Samba Shares. Check doc here https://pythonhosted.org/pysmbc/smbc-module.html
+import smbclient         # https://bitbucket.org/nosklo/pysmbclient/wiki/Home
 import shutil
 
 import cons
 import fentry
 import fileutils
 import gamecache
+import scr
 import shotname
 
 
@@ -31,8 +32,8 @@ class ShotSource():
         self._u_dat_file = u''             # Name of the dat file
         self._u_src_scheme = u''           # Source naming scheme (emulators have different screenshot naming schemes)
 
-        self._u_type = u''                 # Type of source ('dir', 'ftp', 'smb' by now)
-        self._u_host = u''                 # Host. i.e. '192.168.0.100'
+        self.u_type = u''                 # Type of source ('dir', 'ftp', 'smb' by now)
+        self.u_host = u''                 # Host. i.e. '192.168.0.100'
         self._u_root = u''                 # Root folder of the FTP where screenshots are located. i.e. '/data/'
 
         self._u_user = u''                 # The name of the user of the FTP. i.e. 'john'
@@ -43,12 +44,12 @@ class ShotSource():
         self._lu_get_exts = []             # File exts to download_file (case insensitive). i.e. ('jpg', 'png')
         self._lu_del_exts = []             # File exts to delete (case insensitive). i.e. ('bak', 'txt')
 
-        self._b_recursive = True           # Should search in sub-folders inside the root folder?
+        self._b_recursive = False          # Should search in sub-folders inside the root folder?
         self._b_dir_keep = True            # Should the empty folders be kept in the FTP?
         self.o_source = None               # The real source behind the MetaObject
         self.b_connected = False           # Is the source connected?
 
-        self.u_hist_ext = cons.u_HIST_EXT  # Extension for the archived screenshots
+        self.u_hist_ext = 'png'            # Default extension for the archived screenshots
 
     def __str__(self):
         u_output = u''
@@ -56,8 +57,8 @@ class ShotSource():
         u_output += u'         u_name: %s\n' % self.u_name
         u_output += u'    _u_dat_file: %s\n' % self._u_dat_file
         u_output += u'  _u_src_scheme: %s\n' % self._u_src_scheme
-        u_output += u'        u_type: %s\n' % self._u_type
-        u_output += u'        _u_host: %s\n' % self._u_host
+        u_output += u'        u_type: %s\n' % self.u_type
+        u_output += u'        u_host: %s\n' % self.u_host
         u_output += u'        _u_root: %s\n' % self._u_root
         u_output += u'        _u_user: %s\n' % self._u_user
         u_output += u'        _u_pass: %s\n' % self._u_pass
@@ -81,39 +82,45 @@ class ShotSource():
 
         if self.b_connected:
 
-            if self._u_type in (u'dir', u'ftp', u'smb'):
+            if self.u_type in (u'dir', u'ftp', u'smb'):
                 lo_file_entries = self.o_source.list_file_entries(self._u_root,
                                                                   lo_file_entries,
                                                                   b_recursive=self._b_recursive)
 
             else:
-                raise Exception('ERROR: Unknown source type "%s"' % self._u_type)
+                raise Exception('ERROR: Unknown source type "%s"' % self.u_type)
 
         # Since the list of elements could be used to delete everything, it's needed that it's reversed to list first
         # the children and then the parents. This way you will delete first the children and then the parents. The
         # opposite order would lead you to a situation where you would be trying to delete a folder while it stills had
         # the content inside.
-        return reversed(lo_file_entries)
+
+        # Old and fancy method but they updated something in Python and it's not working today
+        #return reversed(lo_file_entries)
+
+        # New way
+        return lo_file_entries[::-1]
 
     def _connect(self):
 
-        if self._u_type == u'dir':
+        if self.u_type == u'dir':
             self.o_source = Dir(self._u_root)
             self.b_connected = True
 
-        elif self._u_type == u'ftp':
-            self.o_source = Ftp(self._u_host, self._u_user, self._u_pass, 5)
+        elif self.u_type == u'ftp':
+            self.o_source = Ftp(self.u_host, self._u_user, self._u_pass, 5)
             self.b_connected = self.o_source.b_connected
             if not self.b_connected:
                 print 'FTP: Not connected'
 
-        elif self._u_type == u'smb':
+        elif self.u_type == u'smb':
             # WIP: add support for samba remote folders
-            self.o_source = Smb(self._u_host, self._u_user, self._u_pass, 5)
+            self.o_source = Smb(self.u_host, self._u_user, self._u_pass, 5)
             self.b_connected = self.o_source.b_connected
 
         else:
-            s_message = 'ERROR: Can\'t connect to unknown ShotSource.u_type = %s' % self._u_type.encode('ascii', 'strict')
+            s_message = 'ERROR: Can\'t connect to unknown ShotSource.u_type = %s' % self.u_type.encode('ascii',
+                                                                                                        'strict')
             raise Exception(s_message)
 
     def _disconnect(self):
@@ -137,9 +144,7 @@ class ShotSource():
         :return: Nothing
         """
 
-        u_message = u'Archiving images from: %s (%s, %s)' % (self.u_name, self._u_type, self._u_host)
-        print u_message.encode('ascii', 'strict')
-        print '-' * 78
+        scr.printh(u'Archiving images...', 2)
 
         # We build the full database file path and we create a database object from it
         u_db_path = os.path.join(cons.u_DAT_DIR, u'%s.txt' % self._u_dat_file)
@@ -178,33 +183,33 @@ class ShotSource():
         else:
             s_ratio = '%0.1f%%' % 0.0
 
-        s_report = 'Converted %i files from %s to %s (%s)\n' % (i_files_processed,
+        s_report = 'Converted %i files from %s to %s (%s)' % (i_files_processed,
                                                             fileutils.human_size(i_orig_size),
                                                             fileutils.human_size(i_mod_size),
                                                             s_ratio)
 
-        print s_report.rjust(78)
+        print s_report.rjust(79)
+        print
 
-    def download_files(self, s_dst_dir):
+    def download_files(self, u_dst_dir):
         """
         Method to download_file all the screenshots from a source.
 
-        :param s_dst_dir: Destination for the images. i.e. '/home/john/temp-images'
+        :param u_dst_dir: Destination for the images. i.e. '/home/john/temp-images'
 
         :return: Nothing
         """
 
-        print 'Getting images from: %s (%s, %s)' % (self.u_name, self._u_type, self._u_host)
-        print '-' * 78
+        scr.printh(u'Getting images...', 2)
 
         self._connect()
 
-        lo_remote_fentries = self._list_file_entries()
+        lo_remote_file_entries = self._list_file_entries()
 
         i_remote_files = 0
         i_remote_dirs = 0
 
-        for o_remote_file_entry in lo_remote_fentries:
+        for o_remote_file_entry in lo_remote_file_entries:
             if o_remote_file_entry.is_file():
                 i_remote_files += 1
             elif o_remote_file_entry.is_dir():
@@ -216,48 +221,59 @@ class ShotSource():
         o_db_fentry.from_local_path(self._u_dat_file)
         u_db_name = o_db_fentry.u_name
 
+        # Initialization of counters
         i_files_got = 0
         i_bytes_got = 0
         i_files_del = 0
         i_bytes_del = 0
         i_dirs_del = 0
 
-        for o_remote_fentry in lo_remote_fentries:
+        for o_remote_file_entry in lo_remote_file_entries:
+
+            b_downloaded = False
+            # print o_remote_file_entry
 
             # Downloading + Renaming of files with selected extensions
-            if o_remote_fentry.is_file() and o_remote_fentry.u_ext in self._lu_get_exts:
+            if o_remote_file_entry.is_file() and (o_remote_file_entry.u_ext in self._lu_get_exts):
 
                 # Adding extra information (timestamp, database name, and source naming scheme) seems to be a good idea
                 # to be safe. i.e. something fails and you end with a lot of mixed files from many different sources in
                 # your temp folder
-                u_dst_name = u'%s - %s %s - %s' % (o_remote_fentry.get_human_date(),
+                u_dst_name = u'%s - %s %s - %s' % (o_remote_file_entry.get_human_date(),
                                                    u_db_name, self._u_src_scheme,
-                                                   o_remote_fentry.u_full_name)
+                                                   o_remote_file_entry.u_full_name)
 
-                u_message = u'Found: %s  %s' % (o_remote_fentry.u_full_name, o_remote_fentry.u_size)
-                print u_message.encode('utf8', 'strict')
+                u_message = u'Found: %s  %s' % (o_remote_file_entry.u_full_name, o_remote_file_entry.u_size)
+                print u_message
 
-                if self.o_source.download_file(o_remote_fentry, s_dst_dir, u_dst_name):
+                b_downloaded = self.o_source.download_file(o_remote_file_entry, u_dst_dir, u_dst_name)
 
+                if b_downloaded:
                     print 'Wrote: %s' % u_dst_name.encode('ascii', 'strict')
 
                     i_files_got += 1
-                    i_bytes_got += o_remote_fentry.i_size
+                    i_bytes_got += o_remote_file_entry.i_size
 
                 else:
                     print 'ERROR: Couldn\'t write %s' % u_dst_name.encode('ascii', 'strict')
 
             # Deletion of files with selected extensions
-            # TODO: If a file hasn't been downloaded, it MUST NOT be deleted. Otherwise it would be lost FOREVER.
-            if o_remote_fentry.is_file() and o_remote_fentry.u_ext.lower() in self._lu_del_exts:
-                if self.o_source.delete(o_remote_fentry):
-                    print 'Del: %s  %s' % (o_remote_fentry.u_full_name, o_remote_fentry.s_size)
-                    i_files_del += 1
-                    i_bytes_del += o_remote_fentry.i_size
+            if b_downloaded:
+                if o_remote_file_entry.is_file() and o_remote_file_entry.u_ext.lower() in self._lu_del_exts:
+
+                    # If the file is deleted, a success message is printed
+                    if self.o_source.delete(o_remote_file_entry):
+                        print '       ...deleted'
+                        i_files_del += 1
+                        i_bytes_del += o_remote_file_entry.i_size
+
+                    # In other case, an error/help message is printed
+                    else:
+                        print '       ...impossible to delete, check permissions'
 
             # Removal of empty folders
-            if o_remote_fentry.is_dir() and not self._b_dir_keep:
-                if self.o_source.delete(o_remote_fentry):
+            if o_remote_file_entry.is_dir() and not self._b_dir_keep:
+                if self.o_source.delete(o_remote_file_entry):
                     i_dirs_del += 1
 
             print
@@ -265,9 +281,10 @@ class ShotSource():
         s_report = ''
         s_report += 'Got: %i/%i files (%s) ' % (i_files_got, i_remote_files, fileutils.human_size(i_bytes_got))
         s_report += 'Del: %i/%i files (%s) '% (i_files_del, i_remote_files, fileutils.human_size(i_bytes_del))
-        s_report += 'and %i/%i dirs\n' % (i_dirs_del, i_remote_dirs)
+        s_report += 'and %i/%i dirs' % (i_dirs_del, i_remote_dirs)
 
-        print s_report.rjust(78)
+        print s_report.rjust(79)
+        print
 
         self._disconnect()
 
@@ -319,15 +336,11 @@ class ShotSource():
 
         # Type of source
         if u_type in (u'dir', u'ftp', u'smb'):
-            self._u_type = u_type
+            self.u_type = u_type
         else:
             raise Exception('ERROR: Unknown source type "%s"' % u_type)
 
-        # Host address
-        if u_type == u'smb':
-            self._u_host = u'smb://%s' % u_host
-        else:
-           self._u_host = u_host
+        self.u_host = u_host
 
         # Root
         self._u_root = u_root
@@ -349,8 +362,6 @@ class ShotSource():
         self._u_pass = u_pass
 
 
-#=======================================================================================================================
-#=======================================================================================================================
 class Ftp:
     """
     Short class (it's not meant to give you full control of FTPs) to handle FTP sources to be included inside the
@@ -392,9 +403,9 @@ class Ftp:
 
         if o_file_entry.is_dir():
             # BIG WARNING HERE: After deleting a directory you are returned to the parent folder of the deleted one!!!
-            self.o_ftp.cwd(o_file_entry.s_root)
+            self.o_ftp.cwd(o_file_entry.u_root)
             try:
-                self.o_ftp.rmd(o_file_entry.s_full_name)
+                self.o_ftp.rmd(o_file_entry.u_full_name)
                 b_deleted = True
             except ftplib.error_perm:
                 pass
@@ -402,21 +413,21 @@ class Ftp:
         return b_deleted
 
     @staticmethod
-    def _file_entry_from_nlst_line(s_root, s_nlst_line):
+    def _file_entry_from_nlst_line(u_root, u_nlst_line):
         """
         Method to build a File Entry (given by fentry.py) parsing a nlst line.
 
-        :param s_nlst_line: line given by ftp nlst command '-rwxrwxrwx   1 root  root    700 Oct 30 19:45 syslink.dat'
+        :param u_nlst_line: line given by ftp nlst command '-rwxrwxrwx   1 root  root    700 Oct 30 19:45 syslink.dat'
 
         :return:
         """
 
         o_file_entry = fentry.FileEntry()
 
-        if s_nlst_line != '..':
+        if u_nlst_line != '..':
 
             # Type of entry (directory or file) and permissions
-            s_chunk_1 = s_nlst_line.partition('   ')[0]
+            s_chunk_1 = u_nlst_line.partition('   ')[0]
 
             if s_chunk_1[0] == 'd':
                 o_file_entry.u_type = 'd'
@@ -426,18 +437,18 @@ class Ftp:
             o_file_entry.u_permission = s_chunk_1[1:]
 
             # Ownership
-            s_chunk_2 = s_nlst_line.partition('    ')[0][15:]
+            s_chunk_2 = u_nlst_line.partition('    ')[0][15:]
 
             o_file_entry.u_user = s_chunk_2.partition('  ')[0]
             o_file_entry.u_group = s_chunk_2.partition('  ')[2]
 
             # Size and Full path (full path => root, name, ext)
-            s_chunk_3 = s_nlst_line.partition('    ')[2]
+            s_chunk_3 = u_nlst_line.partition('    ')[2]
 
             o_file_entry.set_size(int(s_chunk_3.partition(' ')[0]))
 
             s_name = s_chunk_3.split(' ')[4]
-            s_full_path = os.path.join(s_root, s_name)
+            s_full_path = os.path.join(u_root, s_name)
             o_file_entry.set_full_path(s_full_path)
 
         return o_file_entry
@@ -478,32 +489,34 @@ class Ftp:
 
         return lo_prev_elements
 
-    def download_file(self, o_file_entry, s_dst_dir, s_dst_file=''):
+    def download_file(self, o_file_entry, u_dst_dir, u_dst_file=u''):
 
         b_downloaded = False
 
         if o_file_entry.is_file():
-            s_original_path = self.o_ftp.pwd()
-            self.o_ftp.cwd(o_file_entry.s_root)
+            u_original_path = self.o_ftp.pwd()
+            self.o_ftp.cwd(o_file_entry.u_root)
 
-            if s_dst_file == '':
-                s_dst_path = os.path.join(s_dst_dir, o_file_entry.s_full_name)
+            if u_dst_file == '':
+                u_dst_path = os.path.join(u_dst_dir, o_file_entry.u_full_name)
             else:
-                s_dst_path = os.path.join(s_dst_dir, s_dst_file)
+                u_dst_path = os.path.join(u_dst_dir, u_dst_file)
 
             try:
-                o_download_file = open(s_dst_path, 'wb')
+                o_download_file = open(u_dst_path, 'wb')
 
                 self.o_ftp.sendcmd('TYPE I')
-                s_command = 'RETR %s' % o_file_entry.s_full_name
-                self.o_ftp.retrbinary(s_command, o_download_file.write)
+                u_command = 'RETR %s' % o_file_entry.u_full_name
+                self.o_ftp.retrbinary(u_command, o_download_file.write)
 
                 o_download_file.close()
+                b_downloaded = True
+
             except:
                 # TODO: Narrow the exception and add more informative messages in case of errors.
                 print 'ERROR: I couldn\'t download the file'
 
-            self.o_ftp.cwd(s_original_path)
+            self.o_ftp.cwd(u_original_path)
 
         elif o_file_entry.is_dir():
             raise Exception('ERROR: You are trying to download_file a directory as a file')
@@ -514,6 +527,13 @@ class Ftp:
         return b_downloaded
 
     def delete(self, o_file_entry):
+        """
+        Method to delete a directory or file FileEntry object defined in fentry.py.
+
+        :param o_file_entry: FileEntry object to delete.
+
+        :return: True if the FileEntry was deleted, False in other case.
+        """
 
         b_deleted = False
 
@@ -525,8 +545,6 @@ class Ftp:
         return b_deleted
 
 
-#=======================================================================================================================
-#=======================================================================================================================
 class Dir:
     def __init__(self, s_root):
         if os.path.isdir(s_root):
@@ -623,7 +641,6 @@ class Dir:
             print '  Err: Failed to delete the file, check permissions\n'
 
 
-#=======================================================================================================================
 class Smb:
     """
     Short class (it's not meant to give you full control of FTPs) to handle FTP sources to be included inside the
@@ -632,40 +649,41 @@ class Smb:
     def __init__(self, u_host, u_user, u_pass, i_timeout):
 
         self.b_connected = False
-        self._u_host = u_host
-        # We store the user/password UNENCRYPTED, this is a NO-NO-NO... It just works for the purpose and scope of this
-        # small project but NEVER do something like this if you have ANY concern about security.
-        self._u_user = u_user
-        self._u_pass = u_pass
 
-        # First we prepare the connection
-        self.o_smb = smbc.Context()
-        self.o_smb.optionNoAutoAnonymousLogin = True
-        self.o_smb.functionAuthData = self._authenticate
+        u_server = u_host.rpartition('/')[0]
+        u_share = u_host.rpartition('/')[2]
 
-        # Then we check it's working
         try:
-            self.o_smb.stat(u_host)
+            self._o_smb = smbclient.SambaClient(u_server,
+                                                u_share,
+                                                username=u_user,
+                                                password=u_pass,
+                                                domain=None,
+                                                resolve_order=None,
+                                                port=None,
+                                                ip=None,
+                                                terminal_code=None,
+                                                buffer_size=None,
+                                                debug_level=None,
+                                                config_file=None,
+                                                logdir=None,
+                                                netbios_name=None,
+                                                kerberos=False)
+
+            # We call the volume() method simply to check if the samba server is reachable.
+            self._o_smb.volume()
             self.b_connected = True
 
-        except ValueError:
-            print 'SMB: Not connected, check samba server'  # Error when the samba address doesn't exist
-        except smbc.NoEntryError:
-            print 'SMB: Not connected, check samba server'  # Error when the samba address doesn't exist
-        except smbc.PermissionError:
-            print 'SMB: Not connected, check user/password'   # Error when the access data is wrong.
+        except smbclient.SambaClientError:
+            print 'Impossible to connect to the Samba server, please, check these options in'
+            print 'config.ini file:'
+            print
+            print '     address = %s' % u_host
+            print '        user = %s' % u_user
+            print '    password = %s' % u_pass
+            print
 
-    def _authenticate(self, server, u_share, u_workgroup, u_username, u_password):
-        """
-        Cheesy, dirty, and wacky function to authenticate in the samba server. DON'T TAKE IT SERIOUSLY... but it works
-        :param server:
-        :param share:
-        :param workgroup:
-        :param username:
-        :param password:
-        :return:
-        """
-        return ('', self._u_user, self._u_pass)
+            self.o_ftp = None
 
     def _delete_file(self, o_file_entry):
         """
@@ -676,13 +694,42 @@ class Smb:
         :return: Nothing.
         """
 
-        b_file_deleted = False
+        u_full_path = o_file_entry.u_full_path
+
+        if self._o_smb.exists(u_full_path) and self._o_smb.isfile(u_full_path):
+            self._o_smb.unlink(u_full_path)
+
+            if self._o_smb.exists(u_full_path) and self._o_smb.isfile(u_full_path):
+                b_file_deleted = False
+            else:
+                b_file_deleted = True
+
+        else:
+            raise Exception('You tried to delete an non-existent file "%s"' % o_file_entry.u_full_path)
 
         return b_file_deleted
 
     def _delete_dir(self, o_file_entry):
+        """
+        Method to delete a directory from the ftp server.
 
-        b_dir_deleted = False
+        :param o_file_entry: I must be a real directory entry (self.u_type = 'f'). Otherwise an error is printed.
+
+        :return: Nothing.
+        """
+
+        u_full_path = o_file_entry.u_full_path
+
+        if self._o_smb.exists(u_full_path) and self._o_smb.isdir(u_full_path):
+            self._o_smb.rmdir(u_full_path)
+
+            if self._o_smb.exists(u_full_path) and self._o_smb.isdir(u_full_path):
+                b_dir_deleted = False
+            else:
+                b_dir_deleted = True
+
+        else:
+            raise Exception('You tried to delete an non-existent directory "%s"' % o_file_entry.u_full_path)
 
         return b_dir_deleted
 
@@ -694,63 +741,95 @@ class Smb:
         :return: A list of FtpFileEntry objects.
         """
 
-        # In order to access any folder we always have to include the name of the samba sare "self._u_host" at the
-        # beginning of the real folder.
-        u_base_path = os.path.join(self._u_host, u_root)
+        for o_element in self._o_smb.lsdir(u_root):
 
-        o_smb_dir = self.o_smb.opendir(u_base_path)
+            #print o_element
 
-        for o_element in o_smb_dir.getdents():
+            # Parsing the output of lsdir(u_root)
+            u_modes = o_element[1]
 
-            # We create an empty file entry
+            # Maybe an error, but at the end of the files there, SOMETIMES, there is an extra '      N' text that needs
+            # to be removed.
+            if o_element[0][-7:] == '      N':
+                if u_modes == u'D':
+                        u_name = o_element[0]
+                else:
+                        u_name = o_element[0][:-7]
+            else:
+                u_name = o_element[0]
+
+            i_size = o_element[2]
+            o_date = o_element[3]
+
+            u_full_path = os.path.join(u_root, u_name)
+
+            # Creation of the FileEntry object
             o_file_entry = fentry.FileEntry()
+            o_file_entry.set_full_path(u_full_path)
+            o_file_entry.set_size(i_size)
+            o_file_entry.f_time = float(o_date.strftime('%s'))
 
-            # If the element found is a file (I don't know why but type 8 is file)
-            if o_element.smbc_type == 8:
-                u_file_path = os.path.join(u_base_path, o_element.name)
+            if u_modes == u'D':
+                o_file_entry.u_type = u'd'
+            else:
+                o_file_entry.u_type = u'f'
 
-                o_file = self.o_smb.open(u_file_path)
-                #print o_file.fstat()
+            #print o_file_entry
 
-                # We populate the file entry object with the required data
-                o_file_entry.u_type = 'f'
-                o_file_entry.set_full_path(u_file_path)
-                o_file_entry.set_size(o_file.fstat()[6])
+            lo_file_entries.append(o_file_entry)
 
-                # Last time modified (NOTICE fstat() method is rounded to seconds instead of the standard unix behaviour
-                # where you get milliseconds. Not a big deal for my purpose.
-                o_file_entry.f_time = o_file.fstat()[8]
-
-                o_file.close()
-
-            # If the element found is a directory, but not the default '.' or '..' directories
-            elif (o_element.smbc_type == 7) and (o_element.name not in ('.', '..')):
-                u_dir_path = os.path.join(u_base_path, o_element.name)
-
-                #print u_dir_path
-
-                # Population of the file entry with the required data
-                o_file_entry.u_type = 'd'
-                o_file_entry.set_full_path(u_dir_path)
-
-            # If the file entry is a file or a VALID directory, it's added to the list of file entries
-            if o_file_entry.is_file() or o_file_entry.is_dir():
-                lo_file_entries.append(o_file_entry)
-
-                if b_recursive and o_file_entry.is_dir():
-                    u_sub_dir = os.path.join(u_root, o_element.name)
-                    self.list_file_entries(u_sub_dir, lo_file_entries, b_recursive)
+            if b_recursive and o_file_entry.is_dir():
+                self.list_file_entries(o_file_entry.u_full_path, lo_file_entries, b_recursive)
 
         return lo_file_entries
 
-    def download_file(self, o_file_entry, s_dst_dir, s_dst_file=''):
+    def download_file(self, o_file_entry, u_dst_dir, u_dst_file=''):
+        """
+        Method to download file entries from the Smb folder.
+
+        :param o_file_entry: FileEntry object to download (defined in fentry.py)
+
+        :param u_dst_dir: Local destination directory. i.e. '/home/john/screenshtos'
+
+        :param u_dst_file: Destination file name. If it's not specified, the file will be downloaded with the same name
+                           name than in the source.
+
+        :return: True if the file was downloaded successfully, False in other case.
+        """
+
         b_downloaded = False
+
+        # If no destination file is specified, the file will be copied with the same name
+        if u_dst_file == '':
+            u_dst_file = o_file_entry.u_full_name
+
+        u_dst_full_path = os.path.join(u_dst_dir, u_dst_file)
+
+        try:
+            self._o_smb.download(o_file_entry.u_full_path, u_dst_full_path)
+            b_downloaded = True
+        except smbclient.SambaClientError:
+            pass
 
         return b_downloaded
 
     def delete(self, o_file_entry):
+        """
+        Method that redirects the deleting order to the appropiate method for files or directories.
 
-        b_deleted = False
+        :param o_file_entry: FileEntry object.
+
+        :return: True if the file was deleted, False in other case.
+        """
+
+        if o_file_entry.is_dir():
+            b_deleted = self._delete_dir(o_file_entry)
+
+        elif o_file_entry.is_file():
+            b_deleted = self._delete_file(o_file_entry)
+
+        else:
+            raise Exception('o_file_entry not dir and not file, unknown type')
 
         return b_deleted
 
