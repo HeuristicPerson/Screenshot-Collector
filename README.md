@@ -24,8 +24,9 @@ Main system, it should work fine in other operating systems if you are able to f
 
 External Python libraries:
 
-1. Requests library - in Linux `sudo apt-get install python-requests`
-2. lxml library - in Linux `sudo apt-get install python-lxml`
+1. PySmbClient (0.1.3) - in Linux `pip install http://pypi.python.org/packages/source/P/PySmbClient/PySmbClient-0.1.3.tar.gz` 
+2. Requests library - in Linux `sudo apt-get install python-requests`
+3. lxml library - in Linux `sudo apt-get install python-lxml`
 
 
 ## 2. Installation 
