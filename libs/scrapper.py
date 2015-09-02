@@ -11,42 +11,44 @@ import requests
 import lxml.html
 
 
-def get_title_by_id(u_system, u_id):
+def get_title_by_id(u_scrapper, u_id):
 
-    u_output = u'________'
-
-    if u_system == u'xbox360':
+    if u_scrapper == u'xbox360':
         u_output = _xbox360(u_id)
 
     else:
-        print 'Online scrapper for "%s" doesn\'t exist, returning "________" title'
+        raise Exception('Unknown scrapper "%s"' % u_scrapper)
 
     return u_output
 
 
-def _xbox360(s_id):
+def _xbox360(u_id):
     """
     Function to obtain a game's title from xbox.com from its 8 character hexadecimal id.
 
-    :param s_id: The id of the game. i.e.
+    :param u_id: The id of the game. i.e.
     :return:
     """
 
-    s_URL_TEMPLATE = 'http://marketplace.xbox.com/en-US/Product/Super-Meat-Boy/66acd000-77fe-1000-9115-d802{GAME_ID}'
+    u_URL_TEMPLATE = u'http://marketplace.xbox.com/en-US/Product/66acd000-77fe-1000-9115-d802{GAME_ID}'
 
-    if s_id == '00000000':
-        s_title = 'Freestyle Dash'
+    if u_id == u'00000000':
+        u_title = u'Freestyle Dash'
 
     else:
-        s_url = s_URL_TEMPLATE.replace('{GAME_ID}', s_id)
+        s_url = u_URL_TEMPLATE.replace(u'{GAME_ID}', u_id)
 
         o_page = requests.get(s_url)
         o_tree = lxml.html.fromstring(o_page.text)
 
-        s_title = o_tree.xpath('//h1/text()')[0].strip()
+        u_scrapped_title = o_tree.xpath(u'//div[@id="gameDetails"]/h1/text()')[0].strip()
 
         # To avoid the unknown game error
-        if s_title[0:6] == 'Ooops!':
-            s_title = '--- Unknown game ---'
+        if u_scrapped_title[0:6] == u'Ooops!':
+            u_title = u'-- Unknown game --'
+        elif u_scrapped_title == '':
+            u_title = u'-- Nothing Scrapped --'
+        else:
+            u_title = u_scrapped_title
 
-    return s_title
+    return u_title

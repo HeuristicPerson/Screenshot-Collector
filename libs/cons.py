@@ -6,11 +6,10 @@ import sys
 
 # Configuration - Basics
 #=======================================================================================================================
-u_DAT_DIR = u'dats'                            # Directory containing Id/Title dat files
-
-u_TEMP_MOSAIC_DIR = u'images/temp-mosaic'      # Directory for temporal files during mosaic creation
-u_HIST_MOSAIC_DIR = u'images/mosaic'
-u_FONT_DIR = u'media'                          # Directory for the fonts.
+u_CWD = sys.path[0]                                           # Directory of the launching script (dir of collector.py
+                                                              # and mosaic.py)
+u_DAT_DIR = os.path.join(u_CWD, u'dats')                      # Dats folder
+u_FONT_DIR = os.path.join(u_CWD, u'media')                    # Directory for the fonts
 
 # Configuration - Mosaic creation
 #=======================================================================================================================
@@ -27,7 +26,3 @@ u_FONT_DIR = u'media'                          # Directory for the fonts.
 #i_MOSAIC_HEADING_SIZE = 32
 #u_MOSAIC_HEADING_COLOR = u'White'
 
-# Constants (so they were not that constant) modification through a bit of code (don't modify anything from here)
-#=======================================================================================================================
-u_CWD = sys.path[0]
-u_DAT_DIR = os.path.join(u_CWD, u_DAT_DIR)

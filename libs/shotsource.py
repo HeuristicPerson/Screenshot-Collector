@@ -15,7 +15,7 @@ import shutil
 import cons
 import fentry
 import fileutils
-import gamecache
+import gamedb
 import scr
 import shotname
 
@@ -30,10 +30,11 @@ class ShotSource():
         self.u_name = u_name               # Name of the source
 
         self._u_dat_file = u''             # Name of the dat file
+        self.u_scrapper = u''             # Name of the scrapper to populate the dat file
         self._u_src_scheme = u''           # Source naming scheme (emulators have different screenshot naming schemes)
 
-        self.u_type = u''                 # Type of source ('dir', 'ftp', 'smb' by now)
-        self.u_host = u''                 # Host. i.e. '192.168.0.100'
+        self.u_type = u''                  # Type of source ('dir', 'ftp', 'smb' by now)
+        self.u_host = u''                  # Host. i.e. '192.168.0.100'
         self._u_root = u''                 # Root folder of the FTP where screenshots are located. i.e. '/data/'
 
         self._u_user = u''                 # The name of the user of the FTP. i.e. 'john'
@@ -56,9 +57,10 @@ class ShotSource():
         u_output += u'<SOURCE OBJECT>\n'
         u_output += u'         u_name: %s\n' % self.u_name
         u_output += u'    _u_dat_file: %s\n' % self._u_dat_file
+        u_output += u'     u_scrapper: %s\n' % self.u_scrapper
         u_output += u'  _u_src_scheme: %s\n' % self._u_src_scheme
-        u_output += u'        u_type: %s\n' % self.u_type
-        u_output += u'        u_host: %s\n' % self.u_host
+        u_output += u'         u_type: %s\n' % self.u_type
+        u_output += u'         u_host: %s\n' % self.u_host
         u_output += u'        _u_root: %s\n' % self._u_root
         u_output += u'        _u_user: %s\n' % self._u_user
         u_output += u'        _u_pass: %s\n' % self._u_pass
@@ -71,6 +73,65 @@ class ShotSource():
         u_output += u'    b_connected: %s\n' % str(self.b_connected)
 
         return u_output.encode('ascii', 'strict')
+
+    def _disconnect(self):
+        """
+        Method to disconnect from the real source. I think it's helpful to have it to keep the connection to the source
+        alive the less time possible.
+
+        :return: Nothing.
+        """
+
+        self.b_connected = False
+        self.o_source = None
+
+    def _connect(self):
+
+        if self.u_type == u'dir':
+            self.o_source = Dir(self._u_root)
+            self.b_connected = True
+
+        elif self.u_type == u'ftp':
+            self.o_source = Ftp(self.u_host, self._u_user, self._u_pass, 5)
+            self.b_connected = self.o_source.b_connected
+
+        elif self.u_type == u'smb':
+            # WIP: add support for samba remote folders
+            self.o_source = Smb(self.u_host, self._u_user, self._u_pass, 5)
+            self.b_connected = self.o_source.b_connected
+
+        else:
+            s_message = 'ERROR: Can\'t connect to unknown ShotSource.u_type = %s' % self.u_type.encode('ascii',
+                                                                                                       'strict')
+            raise Exception(s_message)
+
+    def _delete_file(self, o_remote_file):
+        b_deleted = self.o_source.delete(o_remote_file)
+        return b_deleted
+
+    def _download_file(self, o_remote_file, u_dst_dir):
+        """
+        Method to download a single file without any kind of check.
+
+        :return:
+        """
+
+        # Workaround to get the database name using a file entry object instead of directly parse the database file
+        # path.
+        o_db_fentry = fentry.FileEntry()
+        o_db_fentry.from_local_path(self._u_dat_file)
+        u_db_name = o_db_fentry.u_name
+
+        # Adding extra information (timestamp, database name, and source naming scheme) seems to be a good idea
+        # to be safe. i.e. something fails and you end with a lot of mixed files from many different sources in
+        # your temp folder
+        u_dst_name = u'%s - %s %s - %s' % (o_remote_file.get_human_date(),
+                                           u_db_name, self._u_src_scheme,
+                                           o_remote_file.u_full_name)
+
+        b_downloaded = self.o_source.download_file(o_remote_file, u_dst_dir, u_dst_name)
+
+        return b_downloaded, u_dst_name
 
     def _list_file_entries(self):
         """
@@ -101,39 +162,7 @@ class ShotSource():
         # New way
         return lo_file_entries[::-1]
 
-    def _connect(self):
-
-        if self.u_type == u'dir':
-            self.o_source = Dir(self._u_root)
-            self.b_connected = True
-
-        elif self.u_type == u'ftp':
-            self.o_source = Ftp(self.u_host, self._u_user, self._u_pass, 5)
-            self.b_connected = self.o_source.b_connected
-            if not self.b_connected:
-                print 'FTP: Not connected'
-
-        elif self.u_type == u'smb':
-            # WIP: add support for samba remote folders
-            self.o_source = Smb(self.u_host, self._u_user, self._u_pass, 5)
-            self.b_connected = self.o_source.b_connected
-
-        else:
-            s_message = 'ERROR: Can\'t connect to unknown ShotSource.u_type = %s' % self.u_type.encode('ascii',
-                                                                                                        'strict')
-            raise Exception(s_message)
-
-    def _disconnect(self):
-        """
-        Method to _disconnect the source.
-
-        :return: Nothing.
-        """
-
-        self.o_source = None
-        self.b_connected = False
-
-    def archive_files(self, u_src_dir, u_dst_dir):
+    def archive_files(self, u_src_dir, u_dst_dir, o_log=None):
         """
         Method to rename, convert and archive_files the images found in u_src_dir, to u_dst_dir
 
@@ -148,18 +177,21 @@ class ShotSource():
 
         # We build the full database file path and we create a database object from it
         u_db_path = os.path.join(cons.u_DAT_DIR, u'%s.txt' % self._u_dat_file)
-        o_games_db = gamecache.Database(u_db_path)
+
+        o_games_db = gamedb.Database(u_db_path, u_scrapper=self.u_scrapper, o_log=o_log)
 
         # Initialization
         i_files_processed = 0
         i_orig_size = 0
         i_mod_size = 0
 
-        # Processing each file found
-        for u_src_file in fileutils.get_files_in(u_src_dir):
-            u_orig_name, u_orig_ext = fileutils.get_name_and_extension(u_src_file)
+        ls_files_found = fileutils.get_files_in(u_src_dir)
+        i_files_found = len(ls_files_found)
 
-            u_arch_name = shotname.raw_to_historic(o_games_db, u_orig_name)
+        # Processing each file found
+        for u_src_file in ls_files_found:
+            u_orig_name, u_orig_ext = fileutils.get_name_and_extension(u_src_file)
+            u_arch_name = shotname.raw_to_historic(o_games_db, u_orig_name, o_log)
 
             u_dst_file = u'%s.%s' % (u_arch_name, self.u_hist_ext)
 
@@ -179,19 +211,21 @@ class ShotSource():
             os.remove(u_src_img)
 
         if i_orig_size != 0:
-            s_ratio = '%0.1f%%' % (100.0 * i_mod_size / i_orig_size)
+            u_ratio = '%0.1f%%' % (100.0 * i_mod_size / i_orig_size)
         else:
-            s_ratio = '%0.1f%%' % 0.0
+            u_ratio = '%0.1f%%' % 0.0
 
-        s_report = 'Converted %i files from %s to %s (%s)' % (i_files_processed,
-                                                            fileutils.human_size(i_orig_size),
-                                                            fileutils.human_size(i_mod_size),
-                                                            s_ratio)
+        u_msg = 'Converted %i files from %s to %s (%s)' % (i_files_processed,
+                                                           fileutils.human_size(i_orig_size),
+                                                           fileutils.human_size(i_mod_size),
+                                                           u_ratio)
+        scr.printr(u_msg)
 
-        print s_report.rjust(79)
-        print
+        if o_log and i_files_found > 0:
+            u_log_msg = '    ' + u_msg
+            o_log.log(u_log_msg)
 
-    def download_files(self, u_dst_dir):
+    def download_files(self, u_dst_dir, o_log=None):
         """
         Method to download_file all the screenshots from a source.
 
@@ -202,89 +236,135 @@ class ShotSource():
 
         scr.printh(u'Getting images...', 2)
 
+        if o_log:
+            o_log.log(u'  Getting "%s" images from source "%s" in folder "%s"' % (self.u_name,
+                                                                                  self.u_host,
+                                                                                  self._u_root))
+
         self._connect()
 
-        lo_remote_file_entries = self._list_file_entries()
+        if not self.b_connected:
+            print 'Not connected...\n'
+            if o_log:
+                o_log.log(u'    Not connected')
 
-        i_remote_files = 0
-        i_remote_dirs = 0
+        else:
+            lo_remote_file_entries = self._list_file_entries()
 
-        for o_remote_file_entry in lo_remote_file_entries:
-            if o_remote_file_entry.is_file():
-                i_remote_files += 1
-            elif o_remote_file_entry.is_dir():
-                i_remote_dirs += 1
+            i_remote_files = 0
+            i_remote_dirs = 0
 
-        # Workaround to get the database name using a file entry object instead of directly parse the database file
-        # path.
-        o_db_fentry = fentry.FileEntry()
-        o_db_fentry.from_local_path(self._u_dat_file)
-        u_db_name = o_db_fentry.u_name
+            # We get the total amount of files and dirs, no matter if they are going to be downloaded/deleted or not.
+            for o_remote_file_entry in lo_remote_file_entries:
+                if o_remote_file_entry.is_file():
+                    i_remote_files += 1
+                elif o_remote_file_entry.is_dir():
+                    i_remote_dirs += 1
 
-        # Initialization of counters
-        i_files_got = 0
-        i_bytes_got = 0
-        i_files_del = 0
-        i_bytes_del = 0
-        i_dirs_del = 0
+            # Workaround to get the database name using a file entry object instead of directly parse the database file
+            # path.
+            o_db_fentry = fentry.FileEntry()
+            o_db_fentry.from_local_path(self._u_dat_file)
 
-        for o_remote_file_entry in lo_remote_file_entries:
+            # Initialization of counters
+            i_files_got = 0
+            i_bytes_got = 0
+            i_files_del = 0
+            i_bytes_del = 0
+            i_dirs_del = 0
 
-            b_downloaded = False
-            # print o_remote_file_entry
+            for o_remote_file_entry in lo_remote_file_entries:
 
-            # Downloading + Renaming of files with selected extensions
-            if o_remote_file_entry.is_file() and (o_remote_file_entry.u_ext in self._lu_get_exts):
+                if o_remote_file_entry.is_file():
+                    u_indicator = 'F'
+                elif o_remote_file_entry.is_dir():
+                    u_indicator = 'D'
 
-                # Adding extra information (timestamp, database name, and source naming scheme) seems to be a good idea
-                # to be safe. i.e. something fails and you end with a lot of mixed files from many different sources in
-                # your temp folder
-                u_dst_name = u'%s - %s %s - %s' % (o_remote_file_entry.get_human_date(),
-                                                   u_db_name, self._u_src_scheme,
-                                                   o_remote_file_entry.u_full_name)
+                u_message = u'Found: (%s) %s  %s' % (u_indicator,
+                                                     o_remote_file_entry.u_full_name,
+                                                     o_remote_file_entry.u_size)
 
-                u_message = u'Found: %s  %s' % (o_remote_file_entry.u_full_name, o_remote_file_entry.u_size)
-                print u_message
+                print u_message.encode('utf8', 'strict')
 
-                b_downloaded = self.o_source.download_file(o_remote_file_entry, u_dst_dir, u_dst_name)
+                # Files
+                if o_remote_file_entry.is_file():
 
-                if b_downloaded:
-                    print 'Wrote: %s' % u_dst_name.encode('ascii', 'strict')
+                    # If the file has to be downloaded
+                    if o_remote_file_entry.u_ext in self._lu_get_exts:
+                        b_downloaded, u_new_name = self._download_file(o_remote_file_entry, u_dst_dir)
+                        u_message = u'Wrote: (%s) %s  %s' % (u_indicator,
+                                                             u_new_name,
+                                                             o_remote_file_entry.u_size)
 
-                    i_files_got += 1
-                    i_bytes_got += o_remote_file_entry.i_size
+                        print u_message.encode('utf8', 'strict')
 
-                else:
-                    print 'ERROR: Couldn\'t write %s' % u_dst_name.encode('ascii', 'strict')
+                        # If the file was DL, the information is added to statistics
+                        if b_downloaded:
+                            i_files_got += 1
+                            i_bytes_got += o_remote_file_entry.i_size
 
-            # Deletion of files with selected extensions
-            if b_downloaded:
-                if o_remote_file_entry.is_file() and o_remote_file_entry.u_ext.lower() in self._lu_del_exts:
+                        # If the file also has to be deleted
+                        if o_remote_file_entry.u_ext in self._lu_del_exts:
+                            if b_downloaded:
+                                b_deleted = self._delete_file(o_remote_file_entry)
+                                if b_deleted:
+                                    print '       ...deleted'
+                                    if o_log:
+                                        o_log.log('...deleted')
 
-                    # If the file is deleted, a success message is printed
-                    if self.o_source.delete(o_remote_file_entry):
-                        print '       ...deleted'
-                        i_files_del += 1
-                        i_bytes_del += o_remote_file_entry.i_size
+                                    i_files_del += 1
+                                    i_bytes_del += o_remote_file_entry.i_size
 
-                    # In other case, an error/help message is printed
+                                else:
+                                    u_message = '...couldn\'t be deleted, check permissions'
+                                    print '      %s' % u_message
+                                    if o_log:
+                                        o_log.log(u_message)
+                            else:
+                                u_message = '...wasn\'t downloaded so I didn\'t deleted it, safety first ;)'
+                                print 'u_message'
+                                if o_log:
+                                    o_log.log(u_message)
+
+                    # If the file wasn't in the list of extensions to DL
                     else:
-                        print '       ...impossible to delete, check permissions'
+                        if o_remote_file_entry.u_ext in self._lu_del_exts:
+                            b_deleted = self._delete_file(o_remote_file_entry)
 
-            # Removal of empty folders
-            if o_remote_file_entry.is_dir() and not self._b_dir_keep:
-                if self.o_source.delete(o_remote_file_entry):
-                    i_dirs_del += 1
+                            # If the file was successfully deleted
+                            if b_deleted:
+                                print '       ...deleted'
+                                i_files_del += 1
+                                i_bytes_del += o_remote_file_entry.i_size
 
+                            else:
+                                print '       ...impossible to delete, check permissions'
+
+                # Removal of empty folders
+                if o_remote_file_entry.is_dir() and not self._b_dir_keep:
+                    if self.o_source.delete(o_remote_file_entry):
+                        i_dirs_del += 1
+
+                print
+
+            # TODO: Fix statistics
+            # No Number of files currently indicates the total number of files, no matter if they have the proper extension
+            # or not, while the total size is just the size of files to download.
+            u_scr_msg = u''
+            u_scr_msg += u'Got: %i/%i files (%s) ' % (i_files_got, i_remote_files, fileutils.human_size(i_bytes_got))
+            u_scr_msg += u'Del: %i/%i files (%s) ' % (i_files_del, i_remote_files, fileutils.human_size(i_bytes_del))
+            u_scr_msg += u'and %i/%i dirs' % (i_dirs_del, i_remote_dirs)
+
+            u_log_msg = u'    '
+            u_log_msg += u'Downloaded %i/%i files (%s) ' % (i_files_got, i_remote_files, fileutils.human_size(i_bytes_got))
+            u_log_msg += u'| Deleted: %i/%i files (%s) ' % (i_files_del, i_remote_files, fileutils.human_size(i_bytes_del))
+            u_log_msg += u'and %i/%i dirs' % (i_dirs_del, i_remote_dirs)
+
+            scr.printr(u_scr_msg)
             print
 
-        s_report = ''
-        s_report += 'Got: %i/%i files (%s) ' % (i_files_got, i_remote_files, fileutils.human_size(i_bytes_got))
-        s_report += 'Del: %i/%i files (%s) '% (i_files_del, i_remote_files, fileutils.human_size(i_bytes_del))
-        s_report += 'and %i/%i dirs' % (i_dirs_del, i_remote_dirs)
-
-        print s_report.rjust(79)
-        print
+            if o_log:
+                o_log.log(u_log_msg)
 
         self._disconnect()
 
@@ -387,13 +467,13 @@ class Ftp:
         :return: Nothing.
         """
         if o_file_entry.is_file():
-            s_original_path = self.o_ftp.pwd()
-            self.o_ftp.cwd(o_file_entry.s_root)
+            u_original_path = self.o_ftp.pwd()
+            self.o_ftp.cwd(o_file_entry.u_root)
 
             #self.o_ftp._sendcmd('TYPE I')
-            self.o_ftp.delete(o_file_entry.s_full_name)
+            self.o_ftp.delete(o_file_entry.u_full_name)
 
-            self.o_ftp.cwd(s_original_path)
+            self.o_ftp.cwd(u_original_path)
 
             return True
 
@@ -682,8 +762,6 @@ class Smb:
             print '        user = %s' % u_user
             print '    password = %s' % u_pass
             print
-
-            self.o_ftp = None
 
     def _delete_file(self, o_file_entry):
         """

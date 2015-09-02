@@ -3,7 +3,7 @@ import re
 import sys
 
 import fentry
-import xcrapper
+import scrapper
 
 # Constants
 #=======================================================================================================================
@@ -11,7 +11,7 @@ s_SANITATION_PATTERN = r'[^\w\d \.\-_]'
 
 
 class Database:
-    def __init__(self, u_cache_file):
+    def __init__(self, u_cache_file, u_scrapper=u'', o_log=None):
         self._du_entries = {}
         self._u_header = ''
 
@@ -27,6 +27,8 @@ class Database:
         o_cache_file.from_local_path(u_cache_file)
 
         self.u_name = o_cache_file.u_name
+        self.u_scrapper = u_scrapper.lower().strip()
+        self.o_log = o_log
 
     def _load_data(self):
         """
@@ -102,15 +104,22 @@ class Database:
 
         u_id = u_id.strip()
 
+        # If the ID exists in the DB, the corresponding title is returned
         try:
             u_title = self._du_entries[u_id]
 
+        # If the ID doesn't exist in the DB...
         except KeyError:
-            u_title = xcrapper.get_title_by_id(self.u_name, u_id)
-
-            # TODO: I don't want to add empty entries in my database
-            self._du_entries[u_id] = u_title
-            self._write_data()
+            # ...if a scrapper was defined, the title is obtained by it and the new information is added to the DB
+            if self.u_scrapper != u'':
+                u_title = scrapper.get_title_by_id(self.u_name, u_id)
+                # TODO: Add extra code to avoid adding empty or meaningless titles to the DB
+                self._du_entries[u_id] = u_title
+                self._write_data()
+            # ...in other case, an empty name is provided
+            else:
+                u_title = '[ID not in DB]'
+                self.o_log.log(u'Game with Id "%s" not found in DB "%s"' % (u_id, self.u_name))
 
         u_title = sanitize(u_title, u_sanitation)
 
@@ -126,12 +135,15 @@ class Database:
                  returned instead.
         """
 
-        u_id = '________'
+        u_id = u'________'
 
         for s_db_id, s_db_title in self._du_entries.iteritems():
             if s_db_title == u_title:
                 u_id = s_db_id
                 break
+
+        if u_id == u'________':
+            self.o_log.log('    WARNING!!! No id found for title "%s" in DB "%s"' % (u_title, self.u_name))
 
         return u_id
 

@@ -11,7 +11,7 @@ import os
 import re
 import sys
 import cons
-import gamecache
+import gamedb
 
 
 #[ CONSTANTS ]==========================================================================================================
@@ -21,7 +21,7 @@ u_HISTORIC_FORMAT = u'%s %s - %s %s - %s'
 #=======================================================================================================================
 
 
-def raw_to_historic(o_games_db, u_src_name):
+def raw_to_historic(o_games_db, u_src_name, o_log=None):
     """
     Function to convert a **COLLECTED** screenshot name to the **FINAL** historical naming scheme used by Screenshot
     Collector.
@@ -72,6 +72,10 @@ def raw_to_historic(o_games_db, u_src_name):
         print
         print 'To avoid losing your precious screenshots, move them to a different place.'
 
+        if o_log:
+            o_log.log(u'ERROR: You tried to convert a file with indicator "%s" using DB "%s"' % (u_database,
+                                                                                                 o_games_db.u_name))
+
         sys.exit()
 
     if u_scheme == u'freestyledash':
@@ -111,7 +115,10 @@ def raw_to_historic(o_games_db, u_src_name):
     # "________" so it's easy to keep track of the unknown games in the historical screenshot folder and the emulator
     # name is a *good* aproximation to the official title of the game.
     if dx_parsed_data['u_name'] == u'________':
-        dx_parsed_data['u_name'] = gamecache.sanitize(u_raw_name, u'plain')
+        dx_parsed_data['u_name'] = gamedb.sanitize(u_raw_name, u'plain')
+
+        if o_log:
+            o_log.log(u'UNKNOWN GAME "%s" in DB "%s"' % (u_raw_name, o_games_db.u_name))
 
     u_historic_output = u'%s - %s %s - %s' % (u_timestamp,
                                               u_database,
@@ -142,7 +149,7 @@ def _kega_to_historic(u_orig_name, o_games_db):
     return {u'u_name': u_new_name, u'u_id': s_id, u'f_timestamp': 0}
 
 
-def _libretro_plus(u_orig_name, o_games_db):
+def _libretro_plus(u_file_name, o_games_db):
     """
     Function to convert screenshots coming from LibRetro Plus. (NOTE! this is not the real Libretro screenshot naming
     convention but my OWN naming convention.
@@ -163,16 +170,16 @@ def _libretro_plus(u_orig_name, o_games_db):
     
     # First we discard the part after the rom name. The timestamp is TOTALLY useless since it's the time when the
     # screenshot was renamed to this scheme, NOT the time when it was taken.
-    u_orig_name = u_orig_name.rpartition(' - ')[0]
+    u_game_orig_name = u_file_name.rpartition(' - ')[0]
     
-    u_id = o_games_db.get_id_by_title(u_orig_name)
+    u_game_id = o_games_db.get_id_by_title(u_game_orig_name)
 
     # We already have the name of the ROM but it's safer to re-obtain it from the Database a) to have a clean name
     # avoiding weird characters, and b) to have it converted to lowercase and so on. Maybe this double check is not good
     # in terms of performance but I think it's much safer.
-    u_new_name = o_games_db.get_title_by_id(u_id, u'plain')
+    u_new_name = o_games_db.get_title_by_id(u_game_id, u'plain')
     
-    return {u'u_name': u_new_name, u'u_id': u_id, u'f_timestamp': 0}
+    return {u'u_name': u_new_name, u'u_id': u_game_id, u'f_timestamp': 0}
     
 
 def _xbox360_to_historic(u_orig_name, o_games_db):

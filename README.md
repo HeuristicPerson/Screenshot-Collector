@@ -118,6 +118,9 @@ Screenshot Collector only works if you have the right databases of games. Maybe 
 or maybe a feature. Full explanation about the subject
 [here](https://github.com/PixelGordo/Screenshot-Collector/wiki/Game-databases).
 
+* **scrapper** - Name of the online scrapper to use to obtain game titles by their Ids. Currently the only included
+ scrapper is `xbox360` valid for --you guessed it-- Xbox 360 using [marketplace.xbox.com](http://marketplace.xbox.com/).
+
 * **scheme** - Every emulator or gaming system (i.e. Freestyle Dash for Xbox 360) saves screenshots with a different
 name structure. i.e. For emulator A it could be `screenshot 0123 - Super Mario World.png` while for emulator B it could
 be `Super Mario World - 01 Apr 2014.gif`. In order to convert those different naming schemes to the global format used
@@ -233,6 +236,8 @@ included in the game databases.
 
 * Some way of storing and adding comments to screenshots that, later, could be included into the posters.
 
+* Change `smbclient` to something more pythonic.
+
 ### 7.2. Version history
 
 **v0.1**
@@ -242,9 +247,18 @@ included in the game databases.
 **v0.2**
 
 * Samba folders support.
+* New `scrapper` option for sources in `config.ini`. Currently just one implemented: `xbox360`.
 * Minor bugs fixed
 * Better support UTF8 "weird" characters. i.e. ™ and ®. Anyway they look really ugly and you should want to remove them
   from your game databases **;)**
+
+### 7.3. Common mistakes
+
+**I obtain many games without Id in my historic folder**
+
+The most common reasons are: **1)** Your screenshots are named following a different database than the files in `dats`
+folder. Rename the ROMs using a ROM manager like ClrMamePro or RomCenter and regenerate the dat files in... **2)** You
+are using the wrong `scheme` option in your `config.ini` file for your source.
 
 ### 7.2. How to mount a NTFS partition in Linux
 

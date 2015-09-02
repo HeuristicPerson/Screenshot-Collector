@@ -11,15 +11,23 @@ periodicity (daily, weekly, monthly, yearly), the background color, the font siz
 screenshot footer.
 """
 
-
+import argparse
 import fcntl
 import os
 import sys
 
+u_CWD = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(u_CWD)
+
 from libs import ini
+from libs import log
 from libs import scr
 from libs import shotsource
 
+# Constants ============================================================================================================
+u_CFG_INI = os.path.join(u_CWD, 'config.ini')
+u_LOG_FILE = os.path.join(u_CWD, 'collector.log')
+#-----------------------------------------------------------------------------------------------------------------------
 
 # Helper function to avoid multiple instances of the script
 #=======================================================================================================================
@@ -39,6 +47,30 @@ def is_file_locked(s_file):
     return True
 
 
+def get_cmdline_options():
+    """
+    Function to process the commandline options.
+
+    :return: Todo: decide.
+    """
+
+    # Creation of the parameter options
+    o_arg_parser = argparse.ArgumentParser()
+    o_arg_parser.add_argument('-l',
+                              action='store_true',
+                              help='Activate program logging (writing information to file after each run)')
+
+    o_args = o_arg_parser.parse_args()
+
+    # To log or not to log, that's the question
+    if o_args.l:
+        b_logging = True
+    else:
+        b_logging = False
+
+    return b_logging
+
+
 def read_collector_config(u_file):
     """
     Function to read the main configuration for the collector tool from disk.
@@ -52,7 +84,6 @@ def read_collector_config(u_file):
     u_temp_dir = o_ini.get_param('collector', 'temp_dir')
     u_hist_dir = o_ini.get_param('collector', 'hist_dir')
     u_hist_ext = o_ini.get_param('collector', 'hist_ext')
-
 
     if not os.path.isdir(u_temp_dir):
         print 'Temporary collector directory doesn\'t exist:'
@@ -109,6 +140,8 @@ def read_sources_config(s_file):
                 raise Exception('config.ini error: unknown or missing database "%s"'
                                 % u_database.encode('ascii', 'strict'))
 
+            u_scrapper = o_ini.get_param(o_section.u_name, u'scrapper')
+
             u_scheme = o_ini.get_param(o_section.u_name, u'scheme')
             if u_scheme == u'':
                 raise Exception('config.ini error: unknown or missing database "%s"'
@@ -142,6 +175,7 @@ def read_sources_config(s_file):
             o_source.set_user_pass(u_user, u_password)          # User and pass for FTP or SAMBA
 
             o_source.set_db_and_scheme(u_database, u_scheme)    # Name of the DB and source screenshot scheme
+            o_source.u_scrapper = u_scrapper                    # Scrapper to use in case the id is not found
             o_source.set_get_exts(*lu_get_exts)                 # File extensions to download_file from source
             o_source.set_del_exts(*lu_del_exts)                 # File extensions to remove from source
 
@@ -158,19 +192,26 @@ def read_sources_config(s_file):
 # Main code
 #=======================================================================================================================
 scr.printh(u'Screenshot Collector v0.2', 1)
-print
 
 if not is_file_locked('.lock'):
     print 'Script already running'
     sys.exit()
 
+b_logging = get_cmdline_options()
+
+if b_logging:
+    o_log = log.Log(u_LOG_FILE)
+    o_log.log('STARTING COLLECTOR')
+else:
+    o_log = None
+
 # TODO: add command line parameters to allow the user to run the collector for just one system.
 # Apart from for testing purposes, it'll be also helpful to solve issues with mixed screenshots in the temporary
 # collection folder.
 
-u_temp_dir, u_hist_dir, u_hist_ext = read_collector_config('config.ini')
+u_temp_dir, u_hist_dir, u_hist_ext = read_collector_config(u_CFG_INI)
 
-lo_shot_sources = read_sources_config('config.ini')
+lo_shot_sources = read_sources_config(u_CFG_INI)
 
 for o_shot_source in lo_shot_sources:
     u_message = 'SOURCE: %s (%s, %s)' % (o_shot_source.u_name,
@@ -178,5 +219,8 @@ for o_shot_source in lo_shot_sources:
                                          o_shot_source.u_host)
     scr.printh(u_message, 1)
 
-    o_shot_source.download_files(u_temp_dir)
-    o_shot_source.archive_files(u_temp_dir, u_hist_dir)
+    o_shot_source.download_files(u_temp_dir, o_log)
+    o_shot_source.archive_files(u_temp_dir, u_hist_dir, o_log)
+
+if o_log:
+    o_log.close()

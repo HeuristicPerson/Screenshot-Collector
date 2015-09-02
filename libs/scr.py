@@ -1,6 +1,7 @@
 #!/usr/local/bin/python
 # -*- coding: utf8 -*-
 
+i_WIDTH = 79
 
 def printh(u_title, i_level=1):
     """
@@ -12,7 +13,6 @@ def printh(u_title, i_level=1):
 
     :return: Nothing.
     """
-    print u_title.encode('utf8', 'strict')
 
     if i_level == 1:
         s_sep_char = '='
@@ -23,4 +23,15 @@ def printh(u_title, i_level=1):
     else:
         raise Exception('Invalid title level "%s"' % str(i_level))
 
-    print s_sep_char * 79
+    if i_level == 1:
+        print s_sep_char * i_WIDTH
+
+    print u_title.encode('utf8', 'strict')
+    print s_sep_char * i_WIDTH
+
+    if i_level == 1:
+        print
+
+
+def printr(u_text):
+    print u_text.encode('utf8', 'strict').rjust(i_WIDTH)
